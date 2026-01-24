@@ -18,7 +18,7 @@ export const isCloudinaryConfigured = () => {
     );
 };
 
-// Configure Cloudinary storage for multer
+// Configure Cloudinary storage for multer (images)
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -28,11 +28,36 @@ const storage = new CloudinaryStorage({
     }
 });
 
-// Create multer upload middleware
+// Configure Cloudinary storage for files (announcements)
+const fileStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: async (req, file) => {
+        // Determine resource type based on file type
+        const isImage = file.mimetype.startsWith('image/');
+        const isPdf = file.mimetype === 'application/pdf';
+
+        return {
+            folder: 'koding-kulture/announcements',
+            resource_type: isImage ? 'image' : 'raw',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'zip'],
+            public_id: `${Date.now()}-${file.originalname.replace(/\.[^/.]+$/, '')}`
+        };
+    }
+});
+
+// Create multer upload middleware for images
 export const upload = multer({
     storage: storage,
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB max file size
+    }
+});
+
+// Create multer upload middleware for files
+export const fileUpload = multer({
+    storage: fileStorage,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB max file size for announcements
     }
 });
 
@@ -53,16 +78,16 @@ export const uploadImage = async (file) => {
     };
 };
 
-// Delete image from Cloudinary
-export const deleteImage = async (publicId) => {
+// Delete image/file from Cloudinary
+export const deleteImage = async (publicId, resourceType = 'image') => {
     if (!isCloudinaryConfigured() || !publicId) {
         return;
     }
 
     try {
-        await cloudinary.uploader.destroy(publicId);
+        await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
     } catch (error) {
-        console.error('Error deleting image from Cloudinary:', error);
+        console.error('Error deleting file from Cloudinary:', error);
     }
 };
 

@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import adminService from '../../services/adminService';
 import contestService from '../../services/contestService';
+import api from '../../services/authService';
 import toast from 'react-hot-toast';
-import { Save, X, Plus, Trash2, Calendar } from 'lucide-react';
+import { Save, X, Plus, Trash2, Calendar, DoorOpen } from 'lucide-react';
 
 const CreateContest = () => {
   const navigate = useNavigate();
   const { contestId } = useParams();
-  const { isAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { isAdmin, isAdminOrOrganiser, user } = useAuth();
   const isEditMode = Boolean(contestId);
+  const preselectedRoomId = searchParams.get('roomId');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -22,22 +25,32 @@ const CreateContest = () => {
     sections: {
       mcq: {
         enabled: true,
-        totalMarks: 100
+        totalMarks: 100,
+        proctored: true
       },
       coding: {
         enabled: true,
-        totalMarks: 300
+        totalMarks: 300,
+        proctored: true
+      },
+      forms: {
+        enabled: false,
+        totalMarks: 0,
+        proctored: false
       }
     },
     rules: ['No cheating allowed', 'Complete all questions within time limit'],
     prizes: ['1st Prize: Certificate + Goodies', '2nd Prize: Certificate', '3rd Prize: Certificate'],
-    isPublished: false
+    isPublished: false,
+    roomId: preselectedRoomId || '' // For room-specific contests
   });
 
   const [loading, setLoading] = useState(false);
+  const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdminOrOrganiser) {
       toast.error('Access denied');
       navigate('/');
       return;
@@ -46,7 +59,40 @@ const CreateContest = () => {
     if (isEditMode) {
       loadContest();
     }
-  }, [contestId, isAdmin]);
+
+    // Fetch rooms for the organiser
+    if (user?.role === 'ORGANISER' || user?.role === 'ADMIN') {
+      fetchRooms();
+    }
+  }, [contestId, isAdminOrOrganiser]);
+
+  const fetchRooms = async () => {
+    setLoadingRooms(true);
+    try {
+      const { data } = await api.get('/rooms');
+      console.log('Fetched rooms:', data.rooms); // Debug log
+
+      // Admin sees all rooms, Organiser sees rooms they manage
+      if (user?.role === 'ADMIN') {
+        setRooms(data.rooms);
+      } else {
+        // Filter rooms where user is owner or co-organiser (using string comparison)
+        const userId = user?._id?.toString() || user?._id;
+        const manageableRooms = data.rooms.filter(room => {
+          const ownerId = room.owner?._id?.toString() || room.owner?._id;
+          const isOwner = ownerId === userId;
+          const isCoOrg = room.coOrganisers?.some(co => (co._id?.toString() || co._id) === userId);
+          console.log('Room:', room.name, 'ownerId:', ownerId, 'userId:', userId, 'isOwner:', isOwner); // Debug
+          return isOwner || isCoOrg;
+        });
+        setRooms(manageableRooms);
+      }
+    } catch (error) {
+      console.error('Failed to fetch rooms:', error);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
 
   const loadContest = async () => {
     try {
@@ -67,7 +113,23 @@ const CreateContest = () => {
         endTime: formatDateTime(contest.endTime),
         duration: contest.duration,
         maxParticipants: contest.maxParticipants || '',
-        sections: contest.sections,
+        sections: {
+          mcq: {
+            enabled: contest.sections?.mcq?.enabled ?? false,
+            totalMarks: contest.sections?.mcq?.totalMarks ?? 0,
+            proctored: contest.sections?.mcq?.proctored ?? true
+          },
+          coding: {
+            enabled: contest.sections?.coding?.enabled ?? false,
+            totalMarks: contest.sections?.coding?.totalMarks ?? 0,
+            proctored: contest.sections?.coding?.proctored ?? true
+          },
+          forms: {
+            enabled: contest.sections?.forms?.enabled ?? false,
+            totalMarks: contest.sections?.forms?.totalMarks ?? 0,
+            proctored: contest.sections?.forms?.proctored ?? false
+          }
+        },
         rules: contest.rules,
         prizes: contest.prizes,
         isPublished: contest.isPublished
@@ -137,7 +199,7 @@ const CreateContest = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!isAdmin) {
+    if (!isAdminOrOrganiser) {
       toast.error('Access denied');
       return;
     }
@@ -158,8 +220,8 @@ const CreateContest = () => {
       return;
     }
 
-    if (!formData.sections.mcq.enabled && !formData.sections.coding.enabled) {
-      toast.error('At least one section (MCQ or Coding) must be enabled');
+    if (!formData.sections.mcq.enabled && !formData.sections.coding.enabled && !formData.sections.forms?.enabled) {
+      toast.error('At least one section (MCQ, Coding, or Forms) must be enabled');
       return;
     }
 
@@ -179,11 +241,18 @@ const CreateContest = () => {
         sections: {
           mcq: {
             enabled: formData.sections.mcq.enabled,
-            totalMarks: parseInt(formData.sections.mcq.totalMarks)
+            totalMarks: parseInt(formData.sections.mcq.totalMarks) || 0,
+            proctored: formData.sections.mcq.proctored ?? true
           },
           coding: {
             enabled: formData.sections.coding.enabled,
-            totalMarks: parseInt(formData.sections.coding.totalMarks)
+            totalMarks: parseInt(formData.sections.coding.totalMarks) || 0,
+            proctored: formData.sections.coding.proctored ?? true
+          },
+          forms: {
+            enabled: formData.sections.forms?.enabled || false,
+            totalMarks: parseInt(formData.sections.forms?.totalMarks) || 0,
+            proctored: formData.sections.forms?.proctored ?? false
           }
         },
         rules: formData.rules.filter(r => r.trim()),
@@ -251,6 +320,49 @@ const CreateContest = () => {
                     required
                   />
                 </div>
+
+                {/* Room Selector - show for all organisers */}
+                {(user?.role === 'ORGANISER' || user?.role === 'ADMIN') && !isEditMode && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <DoorOpen className="inline w-4 h-4 mr-1" />
+                      Room (Optional)
+                    </label>
+                    {loadingRooms ? (
+                      <p className="text-gray-500 text-sm">Loading rooms...</p>
+                    ) : rooms.length > 0 ? (
+                      <>
+                        <select
+                          name="roomId"
+                          value={formData.roomId}
+                          onChange={handleChange}
+                          className="input-field"
+                        >
+                          <option value="">Public Contest (No Room)</option>
+                          {rooms.map(room => (
+                            <option key={room._id} value={room._id}>
+                              {room.name} ({room.shortCode}) {user?.role === 'ADMIN' && room.owner?.name ? `- by ${room.owner.name}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {formData.roomId && (
+                          <p className="text-xs text-primary-400 mt-1">
+                            This contest will be visible only to room members and auto-approved
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-dark-800 border border-dark-700 rounded-lg p-3">
+                        <p className="text-gray-400 text-sm mb-2">
+                          No rooms available. Create a room to host private contests.
+                        </p>
+                        <a href="/rooms/create" className="text-primary-400 hover:text-primary-300 text-sm">
+                          + Create a Room
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -352,19 +464,36 @@ const CreateContest = () => {
                   </div>
 
                   {formData.sections.mcq.enabled && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Total Marks
-                      </label>
-                      <input
-                        type="number"
-                        name="sections.mcq.totalMarks"
-                        value={formData.sections.mcq.totalMarks}
-                        onChange={handleChange}
-                        className="input-field"
-                        min="1"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Total Marks
+                        </label>
+                        <input
+                          type="number"
+                          name="sections.mcq.totalMarks"
+                          value={formData.sections.mcq.totalMarks}
+                          onChange={handleChange}
+                          className="input-field"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Proctoring
+                        </label>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="sections.mcq.proctored"
+                            checked={formData.sections.mcq.proctored}
+                            onChange={handleChange}
+                            className="w-4 h-4 rounded border-gray-600 text-yellow-500 focus:ring-yellow-500"
+                          />
+                          <span className="text-sm text-gray-400">Enable Proctoring</span>
+                        </label>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -385,19 +514,70 @@ const CreateContest = () => {
                   </div>
 
                   {formData.sections.coding.enabled && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Total Marks
-                      </label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Total Marks
+                        </label>
+                        <input
+                          type="number"
+                          name="sections.coding.totalMarks"
+                          value={formData.sections.coding.totalMarks}
+                          onChange={handleChange}
+                          className="input-field"
+                          min="1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Proctoring
+                        </label>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="sections.coding.proctored"
+                            checked={formData.sections.coding.proctored}
+                            onChange={handleChange}
+                            className="w-4 h-4 rounded border-gray-600 text-yellow-500 focus:ring-yellow-500"
+                          />
+                          <span className="text-sm text-gray-400">Enable Proctoring</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Forms Section */}
+                <div className="p-4 bg-dark-700/50 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
                       <input
-                        type="number"
-                        name="sections.coding.totalMarks"
-                        value={formData.sections.coding.totalMarks}
+                        type="checkbox"
+                        name="sections.forms.enabled"
+                        checked={formData.sections.forms?.enabled || false}
                         onChange={handleChange}
-                        className="input-field"
-                        min="1"
-                        required
+                        className="w-5 h-5 rounded border-gray-600 text-primary-500 focus:ring-primary-500"
                       />
+                      <span className="text-lg font-semibold">Custom Forms Section</span>
+                    </label>
+                  </div>
+
+                  {formData.sections.forms?.enabled && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-400">
+                        Create assessment forms after saving the contest. Use the Form Builder to add custom fields.
+                      </p>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="sections.forms.proctored"
+                          checked={formData.sections.forms?.proctored || false}
+                          onChange={handleChange}
+                          className="w-4 h-4 rounded border-gray-600 text-yellow-500 focus:ring-yellow-500"
+                        />
+                        <span className="text-sm text-gray-400">Enable Proctoring (disable for PPT/file submissions)</span>
+                      </label>
                     </div>
                   )}
                 </div>

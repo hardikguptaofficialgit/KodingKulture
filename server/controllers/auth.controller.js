@@ -49,7 +49,7 @@ export const register = async (req, res) => {
       message: 'User registered successfully',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -106,7 +106,7 @@ export const login = async (req, res) => {
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -163,7 +163,7 @@ export const updateProfile = async (req, res) => {
         success: true,
         message: 'Profile updated successfully',
         user: {
-          id: updatedUser._id,
+          _id: updatedUser._id,
           name: updatedUser.name,
           email: updatedUser.email,
           college: updatedUser.college,
@@ -292,7 +292,7 @@ export const verifySignupOTP = async (req, res) => {
       message: 'Email verified successfully! Account created.',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -500,7 +500,7 @@ export const googleAuth = async (req, res) => {
         message: 'Login successful',
         token,
         user: {
-          id: user._id,
+          _id: user._id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -531,7 +531,7 @@ export const googleAuth = async (req, res) => {
       message: 'Account created successfully',
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,

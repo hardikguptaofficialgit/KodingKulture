@@ -6,7 +6,7 @@ import api from '../../services/authService';
 import Loader from '../../components/common/Loader';
 import {
   Trophy, Medal, Award, TrendingUp, ChevronDown, ChevronUp,
-  ArrowLeft, FileText, Code, Timer, Clock, Shield, Users
+  ArrowLeft, FileText, Code, Timer, Clock, Shield, Users, ClipboardList, Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,7 +27,7 @@ const Leaderboard = () => {
   const { contestId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdminOrOrganiser = user?.role === 'ADMIN' || user?.role === 'ORGANISER';
 
   const [leaderboard, setLeaderboard] = useState([]);
   const [stats, setStats] = useState(null);
@@ -41,10 +41,13 @@ const Leaderboard = () => {
     fetchStats();
   }, [contestId]);
 
+  const [formsEnabled, setFormsEnabled] = useState(false);
+
   const fetchLeaderboard = async () => {
     try {
       const data = await leaderboardService.getLeaderboard(contestId);
       setLeaderboard(data.leaderboard);
+      setFormsEnabled(data.formsEnabled || false);
     } catch (error) {
       toast.error('Failed to fetch leaderboard');
       console.error(error);
@@ -63,7 +66,7 @@ const Leaderboard = () => {
   };
 
   const fetchUserDetails = async (userId) => {
-    if (!isAdmin) return;
+    if (!isAdminOrOrganiser) return;
 
     if (expandedUser === userId) {
       setExpandedUser(null);
@@ -98,6 +101,60 @@ const Leaderboard = () => {
     }
   };
 
+  // Export leaderboard to CSV
+  const exportToCSV = () => {
+    if (!leaderboard || leaderboard.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    // Build CSV headers
+    let headers = ['Rank', 'Name', 'Email', 'College', 'MCQ Score', 'Coding Score'];
+    if (formsEnabled) {
+      headers.push('Forms Score');
+    }
+    headers.push('Total Score', 'Time Taken', 'Status');
+
+    // Build CSV rows
+    const rows = leaderboard.map((entry, index) => {
+      const row = [
+        index + 1,
+        entry.userId?.name || 'Unknown',
+        entry.userId?.email || '',
+        entry.userId?.college || '',
+        entry.mcqScore || 0,
+        entry.codingScore || 0
+      ];
+      if (formsEnabled) {
+        row.push(entry.formsScore || 0);
+      }
+      row.push(
+        entry.totalScore || 0,
+        formatTime(entry.totalTimeTaken),
+        entry.status || 'N/A'
+      );
+      return row;
+    });
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `leaderboard_${contestId}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Leaderboard exported successfully!');
+  };
+
   if (loading) {
     return <Loader fullScreen />;
   }
@@ -116,9 +173,16 @@ const Leaderboard = () => {
               Back
             </button>
 
-            {/* Admin: View Violations Button */}
-            {isAdmin && (
+            {/* Admin/Organiser: View Participants & Violations Button */}
+            {isAdminOrOrganiser && (
               <div className="flex items-center gap-2">
+                <button
+                  onClick={exportToCSV}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/30"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
                 <Link
                   to={`/admin/contest/${contestId}/participants`}
                   className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors border border-purple-500/30"
@@ -163,7 +227,7 @@ const Leaderboard = () => {
         )}
 
         {/* Admin Hint */}
-        {isAdmin && (
+        {isAdminOrOrganiser && (
           <div className="mb-4 p-3 bg-primary-500/10 border border-primary-500/30 rounded-lg text-sm text-primary-400">
             <TrendingUp className="w-4 h-4 inline mr-2" />
             Click on any participant row to view detailed time breakdown per question and section
@@ -186,9 +250,10 @@ const Leaderboard = () => {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Participant</th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">MCQ Score</th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Coding Score</th>
+                    {formsEnabled && <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Forms Score</th>}
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Total Score</th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Time Taken</th>
-                    {isAdmin && <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Details</th>}
+                    {isAdminOrOrganiser && <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Details</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-800">
@@ -197,8 +262,8 @@ const Leaderboard = () => {
                       <tr
                         key={entry._id}
                         className={`hover:bg-dark-800 transition-colors ${entry.rank <= 3 ? 'bg-primary-500/5' : ''
-                          } ${isAdmin ? 'cursor-pointer' : ''}`}
-                        onClick={() => isAdmin && fetchUserDetails(entry.userId?._id)}
+                          } ${isAdminOrOrganiser ? 'cursor-pointer' : ''}`}
+                        onClick={() => isAdminOrOrganiser && fetchUserDetails(entry.userId?._id)}
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -212,19 +277,28 @@ const Leaderboard = () => {
                             </div>
                             <div>
                               <div className="font-semibold text-white">{entry.userId?.name}</div>
-                              {isAdmin && <div className="text-sm text-gray-500">{entry.userId?.email}</div>}
+                              {isAdminOrOrganiser && <div className="text-sm text-gray-500">{entry.userId?.email}</div>}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center text-blue-400 font-semibold">{entry.mcqScore || 0}</td>
                         <td className="px-6 py-4 text-center text-green-400 font-semibold">{entry.codingScore || 0}</td>
+                        {formsEnabled && (
+                          <td className="px-6 py-4 text-center">
+                            {entry.isFormsEvaluated ? (
+                              <span className="text-cyan-400 font-semibold">{entry.formsScore || 0}</span>
+                            ) : (
+                              <span className="text-yellow-400 text-sm">Pending</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-6 py-4 text-center">
                           <span className="font-bold text-primary-500 text-lg">{entry.totalScore}</span>
                         </td>
                         <td className="px-6 py-4 text-center text-gray-400">
                           {formatTime(entry.timeTaken)}
                         </td>
-                        {isAdmin && (
+                        {isAdminOrOrganiser && (
                           <td className="px-6 py-4 text-center">
                             {expandedUser === entry.userId?._id ? (
                               <ChevronUp className="w-5 h-5 text-primary-400 mx-auto" />
@@ -236,7 +310,7 @@ const Leaderboard = () => {
                       </tr>
 
                       {/* Expanded Details Row (Admin Only) */}
-                      {isAdmin && expandedUser === entry.userId?._id && (
+                      {isAdminOrOrganiser && expandedUser === entry.userId?._id && (
                         <tr key={`${entry._id}-details`}>
                           <td colSpan={7} className="bg-dark-800/80 p-6">
                             {loadingDetails ? (
@@ -246,7 +320,7 @@ const Leaderboard = () => {
                             ) : userDetails ? (
                               <div className="space-y-6">
                                 {/* Summary Cards */}
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-5 gap-4">
                                   <div className="bg-dark-700/50 rounded-lg p-4">
                                     <div className="flex items-center gap-2 text-blue-400 mb-2">
                                       <FileText className="w-5 h-5" />
@@ -260,6 +334,13 @@ const Leaderboard = () => {
                                       <span className="font-semibold">Coding Section</span>
                                     </div>
                                     <p className="text-2xl font-bold text-white">{formatTime(userDetails.codingSectionTime)}</p>
+                                  </div>
+                                  <div className="bg-dark-700/50 rounded-lg p-4">
+                                    <div className="flex items-center gap-2 text-cyan-400 mb-2">
+                                      <ClipboardList className="w-5 h-5" />
+                                      <span className="font-semibold">Forms Section</span>
+                                    </div>
+                                    <p className="text-2xl font-bold text-white">{formatTime(userDetails.formsSectionTime)}</p>
                                   </div>
                                   <div className="bg-dark-700/50 rounded-lg p-4">
                                     <div className="flex items-center gap-2 text-primary-400 mb-2">
@@ -319,7 +400,7 @@ const Leaderboard = () => {
                                 </div>
 
                                 {/* Per Question/Problem Details */}
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-3 gap-6">
                                   {/* MCQ Questions */}
                                   <div>
                                     <h4 className="text-sm font-semibold text-gray-400 mb-3">MCQ Question Times</h4>
@@ -352,6 +433,31 @@ const Leaderboard = () => {
                                       ))}
                                       {(userDetails.codingTimeDetails || []).length === 0 && (
                                         <p className="text-gray-500 text-sm">No problem data</p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Forms */}
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-400 mb-3">Form Times</h4>
+                                    <div className="max-h-48 overflow-y-auto space-y-1">
+                                      {(userDetails.formsTimeDetails || []).map((f, i) => (
+                                        <div key={i} className="flex justify-between items-center bg-dark-700/20 p-2 rounded text-sm">
+                                          <span className="text-gray-400 truncate max-w-[200px]" title={f.title}>
+                                            F{i + 1}: {f.title}
+                                          </span>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-cyan-400 font-mono">{formatTime(f.timeSpent)}</span>
+                                            {f.isEvaluated ? (
+                                              <span className="text-green-400 text-xs">{f.score}/{f.maxScore}</span>
+                                            ) : (
+                                              <span className="text-yellow-400 text-xs">Pending</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {(userDetails.formsTimeDetails || []).length === 0 && (
+                                        <p className="text-gray-500 text-sm">No form data</p>
                                       )}
                                     </div>
                                   </div>

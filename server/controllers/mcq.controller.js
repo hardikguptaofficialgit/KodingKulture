@@ -7,19 +7,35 @@ import Contest from '../models/Contest.js';
 
 // @desc    Get all library MCQs
 // @route   GET /api/mcq/library
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const getLibraryMCQs = async (req, res) => {
   try {
     const { category, difficulty, search } = req.query;
 
-    const filter = { isLibrary: true };
+    let filter = { isLibrary: true };
+
+    // Admin sees all library questions
+    // Organiser sees: public questions (from admin) + their own private questions
+    if (req.user.role === 'ORGANISER') {
+      filter = {
+        isLibrary: true,
+        $or: [
+          { isPublic: true },  // Admin's public questions
+          { createdBy: req.user._id }  // Their own questions
+        ]
+      };
+    }
+
     if (category) filter.category = category;
     if (difficulty) filter.difficulty = difficulty;
     if (search) {
-      filter.$or = [
-        { question: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
-      ];
+      const searchFilter = {
+        $or: [
+          { question: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } }
+        ]
+      };
+      filter = { ...filter, ...searchFilter };
     }
 
     const mcqs = await MCQ.find(filter).sort({ createdAt: -1 });
@@ -40,20 +56,25 @@ export const getLibraryMCQs = async (req, res) => {
 
 // @desc    Create library MCQ
 // @route   POST /api/mcq/library
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const createLibraryMCQ = async (req, res) => {
   try {
     const mcqData = {
       ...req.body,
       isLibrary: true,
-      contestId: null
+      contestId: null,
+      createdBy: req.user._id,
+      // Organiser questions are always private, Admin can set isPublic
+      isPublic: req.user.role === 'ADMIN' ? (req.body.isPublic !== false) : false
     };
 
     const mcq = await MCQ.create(mcqData);
 
     res.status(201).json({
       success: true,
-      message: 'Library MCQ created successfully',
+      message: req.user.role === 'ADMIN'
+        ? 'Library MCQ created successfully'
+        : 'Personal library MCQ created (private)',
       mcq
     });
   } catch (error) {
@@ -230,15 +251,24 @@ export const getMCQsByContest = async (req, res) => {
   try {
     const { contestId } = req.params;
 
-    // Check if user is registered (skip for admin)
-    if (req.user.role !== 'ADMIN') {
-      const contest = await Contest.findById(contestId);
-      if (!contest.participants.includes(req.user._id)) {
-        return res.status(403).json({
-          success: false,
-          message: 'You are not registered for this contest'
-        });
-      }
+    const contest = await Contest.findById(contestId);
+    if (!contest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Contest not found'
+      });
+    }
+
+    // Check access: Admin, Organiser (creator), or registered participant
+    const isCreator = contest.createdBy?.toString() === req.user._id.toString();
+    const isParticipant = contest.participants?.includes(req.user._id);
+    const isAdminOrCreator = req.user.role === 'ADMIN' || (req.user.role === 'ORGANISER' && isCreator);
+
+    if (!isAdminOrCreator && !isParticipant) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not registered for this contest'
+      });
     }
 
     // Get contest-specific MCQs
@@ -265,8 +295,7 @@ export const getMCQsByContest = async (req, res) => {
         contestMCQId: link._id
       }));
 
-    // Get contest info
-    const contest = await Contest.findById(contestId).select('title duration startTime endTime');
+    // Contest info already fetched above
 
     const allMCQs = [...directMCQs, ...libraryMCQs].sort((a, b) => a.order - b.order);
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, Award } from 'lucide-react';
+import { Calendar, Clock, Users, Award, User } from 'lucide-react';
 import { formatDate } from '../../utils/formatTime';
 import { CONTEST_STATUS } from '../../utils/constants';
 
@@ -33,6 +33,12 @@ const ContestCard = ({ contest }) => {
         {contest.title}
       </h3>
 
+      {/* Host Name */}
+      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <User className="w-3 h-3" />
+        <span>Hosted by {contest.createdBy?.name || 'Admin'}</span>
+      </div>
+
       {/* Description */}
       <p className="text-gray-400 text-sm mb-4 line-clamp-2">
         {contest.description}
@@ -45,8 +51,16 @@ const ContestCard = ({ contest }) => {
           <span>{new Date(contest.startTime).toLocaleDateString()}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Clock className="w-4 h-4 text-primary-500" />
+          <Clock className="w-4 h-4 text-green-500" />
           <span>{new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <Calendar className="w-4 h-4 text-red-400" />
+          <span>{new Date(contest.endTime).toLocaleDateString()}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <Clock className="w-4 h-4 text-red-400" />
+          <span>{new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <Users className="w-4 h-4 text-primary-500" />
@@ -59,7 +73,7 @@ const ContestCard = ({ contest }) => {
       </div>
 
       {/* Action Button */}
-      <Link 
+      <Link
         to={`/contest/${contest._id}`}
         className="block w-full btn-primary text-center"
       >

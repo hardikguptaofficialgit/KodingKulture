@@ -1,7 +1,7 @@
 import express from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import { adminOnly } from '../middlewares/admin.middleware.js';
-import { upload, isCloudinaryConfigured, deleteImage } from '../config/cloudinary.js';
+import { upload, fileUpload, isCloudinaryConfigured, deleteImage } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -37,6 +37,51 @@ router.post('/image', protect, adminOnly, (req, res) => {
         res.status(200).json({
             success: true,
             imageUrl: req.file.path,
+            publicId: req.file.filename
+        });
+    });
+});
+
+// @desc    Upload file for announcements
+// @route   POST /api/upload/file
+// @access  Private (Organiser or Admin)
+router.post('/file', protect, (req, res) => {
+    // Check if user is organiser or admin
+    if (req.user.role !== 'ORGANISER' && req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+            success: false,
+            message: 'Only organisers can upload files'
+        });
+    }
+
+    // Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+        return res.status(503).json({
+            success: false,
+            message: 'File upload is not configured. Please set up Cloudinary credentials.'
+        });
+    }
+
+    // Use multer file upload
+    fileUpload.single('file')(req, res, (err) => {
+        if (err) {
+            console.error('Upload error:', err);
+            return res.status(400).json({
+                success: false,
+                message: err.message || 'Error uploading file'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please upload a file'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            url: req.file.path,
             publicId: req.file.filename
         });
     });

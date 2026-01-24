@@ -42,6 +42,14 @@ const resultSchema = new mongoose.Schema({
     attempts: Number,
     solved: Boolean
   }],
+  formsScore: {
+    type: Number,
+    default: 0
+  },
+  isFormsEvaluated: {
+    type: Boolean,
+    default: true // true by default if no forms section
+  },
   totalScore: {
     type: Number,
     default: 0

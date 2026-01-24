@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Code2, Trophy, LogOut, User, LayoutDashboard, Menu, X } from 'lucide-react';
+import { Code2, Trophy, LogOut, User, LayoutDashboard, Menu, X, DoorOpen } from 'lucide-react';
 import { useState } from 'react';
 
 const Navbar = () => {
@@ -40,10 +40,14 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                {isAdmin && (
+                <Link to="/rooms" className="text-gray-300 hover:text-primary-500 transition-colors duration-200 flex items-center gap-1">
+                  <DoorOpen className="w-4 h-4" />
+                  Rooms
+                </Link>
+                {(isAdmin || user?.role === 'ORGANISER') && (
                   <Link to="/admin/dashboard" className="btn-outline py-2 px-4 flex items-center gap-2">
                     <LayoutDashboard className="w-4 h-4" />
-                    Admin
+                    {isAdmin ? 'Admin' : 'Organiser'}
                   </Link>
                 )}
                 <Link to="/dashboard" className="text-gray-300 hover:text-primary-500 transition-colors duration-200 flex items-center gap-2">
@@ -87,11 +91,14 @@ const Navbar = () => {
             </Link>
             {isAuthenticated ? (
               <>
-                {isAdmin && (
+                {(isAdmin || user?.role === 'ORGANISER') && (
                   <Link to="/admin/dashboard" className="block text-gray-300 hover:text-primary-500 py-2">
-                    Admin Dashboard
+                    {isAdmin ? 'Admin Dashboard' : 'Organiser Dashboard'}
                   </Link>
                 )}
+                <Link to="/rooms" className="block text-gray-300 hover:text-primary-500 py-2">
+                  My Rooms
+                </Link>
                 <Link to="/dashboard" className="block text-gray-300 hover:text-primary-500 py-2">
                   My Dashboard
                 </Link>

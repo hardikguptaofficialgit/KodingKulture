@@ -6,19 +6,35 @@ import Contest from '../models/Contest.js';
 
 // @desc    Get all library coding problems
 // @route   GET /api/coding/library
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const getLibraryProblems = async (req, res) => {
   try {
     const { category, difficulty, search } = req.query;
 
-    const filter = { isLibrary: true };
+    let filter = { isLibrary: true };
+
+    // Admin sees all library problems
+    // Organiser sees: public problems (from admin) + their own private problems
+    if (req.user.role === 'ORGANISER') {
+      filter = {
+        isLibrary: true,
+        $or: [
+          { isPublic: true },  // Admin's public problems
+          { createdBy: req.user._id }  // Their own problems
+        ]
+      };
+    }
+
     if (category) filter.category = category;
     if (difficulty) filter.difficulty = difficulty;
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } }
-      ];
+      const searchFilter = {
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } }
+        ]
+      };
+      filter = { ...filter, ...searchFilter };
     }
 
     const problems = await CodingProblem.find(filter)
@@ -41,20 +57,25 @@ export const getLibraryProblems = async (req, res) => {
 
 // @desc    Create library coding problem
 // @route   POST /api/coding/library
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const createLibraryProblem = async (req, res) => {
   try {
     const problemData = {
       ...req.body,
       isLibrary: true,
-      contestId: null
+      contestId: null,
+      createdBy: req.user._id,
+      // Organiser problems are always private, Admin can set isPublic
+      isPublic: req.user.role === 'ADMIN' ? (req.body.isPublic !== false) : false
     };
 
     const problem = await CodingProblem.create(problemData);
 
     res.status(201).json({
       success: true,
-      message: 'Library problem created successfully',
+      message: req.user.role === 'ADMIN'
+        ? 'Library problem created successfully'
+        : 'Personal library problem created (private)',
       problem
     });
   } catch (error) {
@@ -235,13 +256,16 @@ export const getCodingProblemsByContest = async (req, res) => {
       });
     }
 
-    if (req.user.role !== 'ADMIN') {
-      if (!contest.participants.includes(req.user._id)) {
-        return res.status(403).json({
-          success: false,
-          message: 'You are not registered for this contest'
-        });
-      }
+    // Check access: Admin, Organiser (creator), or registered participant
+    const isCreator = contest.createdBy?.toString() === req.user._id.toString();
+    const isParticipant = contest.participants?.includes(req.user._id);
+    const isAdminOrCreator = req.user.role === 'ADMIN' || (req.user.role === 'ORGANISER' && isCreator);
+
+    if (!isAdminOrCreator && !isParticipant) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not registered for this contest'
+      });
     }
 
     // Get contest-specific problems

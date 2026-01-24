@@ -38,6 +38,10 @@ const contestSchema = new mongoose.Schema({
       totalMarks: {
         type: Number,
         default: 0
+      },
+      proctored: {
+        type: Boolean,
+        default: true
       }
     },
     coding: {
@@ -52,6 +56,24 @@ const contestSchema = new mongoose.Schema({
       totalMarks: {
         type: Number,
         default: 0
+      },
+      proctored: {
+        type: Boolean,
+        default: true
+      }
+    },
+    forms: {
+      enabled: {
+        type: Boolean,
+        default: false
+      },
+      totalMarks: {
+        type: Number,
+        default: 0
+      },
+      proctored: {
+        type: Boolean,
+        default: false // Forms typically don't need proctoring (e.g., PPT submission)
       }
     }
   },
@@ -86,18 +108,45 @@ const contestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'APPROVED' // Admin-created default to APPROVED, Organiser-created will be set to PENDING
+  },
+  rejectionReason: {
+    type: String,
+    default: null
+  },
+  // Room reference - if set, this is a room-specific contest
+  roomId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Room',
+    default: null // null means public contest
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 // Indexes
 contestSchema.index({ status: 1, startTime: -1 });
 contestSchema.index({ isPublished: 1 });
 
-// Virtual for total marks
-contestSchema.virtual('totalMarks').get(function() {
-  return (this.sections.mcq.totalMarks || 0) + (this.sections.coding.totalMarks || 0);
+// Virtual for total marks - only count enabled sections
+contestSchema.virtual('totalMarks').get(function () {
+  let total = 0;
+  if (this.sections.mcq?.enabled) {
+    total += this.sections.mcq.totalMarks || 0;
+  }
+  if (this.sections.coding?.enabled) {
+    total += this.sections.coding.totalMarks || 0;
+  }
+  if (this.sections.forms?.enabled) {
+    total += this.sections.forms.totalMarks || 0;
+  }
+  return total;
 });
 
 const Contest = mongoose.model('Contest', contestSchema);

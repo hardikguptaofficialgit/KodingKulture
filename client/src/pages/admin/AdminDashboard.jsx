@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import contestService from '../../services/contestService';
+import api from '../../services/authService';
 import toast from 'react-hot-toast';
 import {
   Plus,
@@ -13,11 +14,18 @@ import {
   Edit,
   Trash2,
   Eye,
-  BarChart3
+  BarChart3,
+  UserCheck,
+  Clock,
+  ClipboardList,
+  StopCircle,
+  CheckSquare,
+  Globe,
+  DoorOpen
 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isAdminOrOrganiser } = useAuth();
   const navigate = useNavigate();
 
   const [contests, setContests] = useState([]);
@@ -30,28 +38,20 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    if (!isAdmin) {
-      toast.error('Access denied. Admin only.');
+    if (!isAdminOrOrganiser) {
+      toast.error('Access denied. Admin or Organiser only.');
       navigate('/');
       return;
     }
     fetchContests();
-  }, [isAdmin]);
+  }, [isAdminOrOrganiser]);
 
   const fetchContests = async () => {
     try {
-      const data = await contestService.getAllContests();
-      setContests(data.contests);
-
-      // Calculate stats
-      const stats = {
-        totalContests: data.contests.length,
-        liveContests: data.contests.filter(c => c.status === 'LIVE').length,
-        upcomingContests: data.contests.filter(c => c.status === 'UPCOMING').length,
-        totalParticipants: data.contests.reduce((sum, c) => sum + (c.participants?.length || 0), 0)
-      };
-      setStats(stats);
-
+      // Use admin endpoint which filters by owner for organisers
+      const response = await api.get('/contests/admin');
+      setContests(response.data.contests);
+      setStats(response.data.stats);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching contests:', error);
@@ -75,6 +75,27 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEndContest = async (contestId, contestTitle) => {
+    const confirmed = window.confirm(
+      `⚠️ END CONTEST: "${contestTitle}"\n\n` +
+      `This will:\n` +
+      `• Set the contest end time to NOW\n` +
+      `• Auto-submit all active participants with their current progress\n\n` +
+      `This action CANNOT be undone. Are you sure?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await api.post(`/contests/${contestId}/end`);
+      toast.success(response.data.message);
+      fetchContests();
+    } catch (error) {
+      console.error('Error ending contest:', error);
+      toast.error(error.response?.data?.message || 'Failed to end contest');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'LIVE':
@@ -86,6 +107,16 @@ const AdminDashboard = () => {
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
+  };
+
+  const getContestStatus = (contest) => {
+    const now = new Date();
+    const startTime = new Date(contest.startTime);
+    const endTime = new Date(contest.endTime);
+
+    if (now < startTime) return 'UPCOMING';
+    if (now >= startTime && now <= endTime) return 'LIVE';
+    return 'ENDED';
   };
 
   if (loading) {
@@ -102,17 +133,39 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {isAdmin ? 'Admin Dashboard' : 'Organiser Dashboard'}
+            </h1>
             <p className="text-gray-400">Manage contests, MCQs, and coding problems</p>
           </div>
 
-          <button
-            onClick={() => navigate('/admin/contest/create')}
-            className="btn-primary"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create Contest
-          </button>
+          <div className="flex gap-3">
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => navigate('/admin/users')}
+                  className="btn-secondary flex items-center"
+                >
+                  <UserCheck className="w-5 h-5 mr-2" />
+                  Manage Users
+                </button>
+                <button
+                  onClick={() => navigate('/admin/verify-contests')}
+                  className="btn-secondary flex items-center"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  Pending Approvals
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => navigate('/admin/contest/create')}
+              className="btn-primary"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Create Contest
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -189,10 +242,12 @@ const AdminDashboard = () => {
                 <thead>
                   <tr className="border-b border-dark-700">
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold">Contest</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Host</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Date</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Start - End</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold">Duration</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold">Participants</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Room</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold">Sections</th>
                     <th className="text-right py-3 px-4 text-gray-400 font-semibold">Actions</th>
                   </tr>
@@ -207,16 +262,31 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`badge border ${getStatusColor(contest.status)}`}>
-                          {contest.status}
-                        </span>
+                        <span className="text-gray-300 text-sm">{contest.createdBy?.name || 'Admin'}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span className={`badge border ${getStatusColor(contest.status)}`}>
+                            {contest.status}
+                          </span>
+                          {contest.verificationStatus === 'PENDING' && (
+                            <span className="badge border bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+                              PENDING
+                            </span>
+                          )}
+                          {contest.verificationStatus === 'REJECTED' && (
+                            <span className="badge border bg-red-500/20 text-red-400 border-red-500/50">
+                              REJECTED
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-4 text-gray-300">
-                        {new Date(contest.startTime).toLocaleDateString()}
-                        <br />
-                        <span className="text-sm text-gray-500">
-                          {new Date(contest.startTime).toLocaleTimeString()}
-                        </span>
+                        <div className="text-xs">
+                          <div>{new Date(contest.startTime).toLocaleDateString()} {new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="text-gray-500">to</div>
+                          <div>{new Date(contest.endTime).toLocaleDateString()} {new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
                       </td>
                       <td className="py-4 px-4 text-gray-300">
                         {contest.duration} min
@@ -233,6 +303,28 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td className="py-4 px-4">
+                        {contest.roomId ? (
+                          <Link
+                            to={`/rooms/${contest.roomId._id}`}
+                            className="flex flex-col items-start gap-0.5 hover:opacity-80 transition-opacity"
+                          >
+                            <span className="flex items-center gap-1 text-primary-400">
+                              <DoorOpen className="w-4 h-4" />
+                            </span>
+                            <span className="text-primary-400 text-xs underline">
+                              {contest.roomId.name || 'Room'}
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="flex flex-col items-start gap-0.5">
+                            <span className="flex items-center gap-1 text-green-400">
+                              <Globe className="w-4 h-4" />
+                            </span>
+                            <span className="text-green-400 text-xs">Public</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
                         <div className="flex gap-2">
                           {contest.sections?.mcq?.enabled && (
                             <span className="badge-info text-xs">
@@ -244,6 +336,12 @@ const AdminDashboard = () => {
                             <span className="badge-success text-xs">
                               <Code className="w-3 h-3 inline mr-1" />
                               Coding
+                            </span>
+                          )}
+                          {contest.sections?.forms?.enabled && (
+                            <span className="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded text-xs">
+                              <ClipboardList className="w-3 h-3 inline mr-1" />
+                              Forms
                             </span>
                           )}
                         </div>
@@ -266,34 +364,85 @@ const AdminDashboard = () => {
                             <BarChart3 className="w-4 h-4 text-green-400" />
                           </button>
 
-                          <button
-                            onClick={() => navigate(`/admin/contest/mcq/${contest._id}`)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="Manage MCQs"
-                          >
-                            <FileQuestion className="w-4 h-4 text-purple-400" />
-                          </button>
+                          {/* End Contest button - only show for LIVE contests */}
+                          {getContestStatus(contest) === 'LIVE' && (
+                            <button
+                              onClick={() => handleEndContest(contest._id, contest.title)}
+                              className="p-2 hover:bg-red-600/20 rounded-lg transition-colors"
+                              title="End Contest Now"
+                            >
+                              <StopCircle className="w-4 h-4 text-red-400" />
+                            </button>
+                          )}
 
-                          <button
-                            onClick={() => navigate(`/admin/contest/coding/${contest._id}`)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="Manage Coding Problems"
-                          >
-                            <Code className="w-4 h-4 text-orange-400" />
-                          </button>
+                          {/* MCQ button - only show if MCQ section is enabled */}
+                          {contest.sections?.mcq?.enabled && (
+                            <button
+                              onClick={() => navigate(`/admin/contest/mcq/${contest._id}`)}
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              title="Manage MCQs"
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                            >
+                              <FileQuestion className="w-4 h-4 text-purple-400" />
+                            </button>
+                          )}
 
+                          {/* Coding button - only show if Coding section is enabled */}
+                          {contest.sections?.coding?.enabled && (
+                            <button
+                              onClick={() => navigate(`/admin/contest/coding/${contest._id}`)}
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              title="Manage Coding Problems"
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                            >
+                              <Code className="w-4 h-4 text-orange-400" />
+                            </button>
+                          )}
+
+                          {/* Forms button - only show if Forms section is enabled */}
+                          {contest.sections?.forms?.enabled && (
+                            <button
+                              onClick={() => navigate(`/admin/contest/forms/${contest._id}`)}
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                              title="Manage Forms"
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                            >
+                              <ClipboardList className="w-4 h-4 text-cyan-400" />
+                            </button>
+                          )}
+
+                          {/* Evaluate Forms button - show if Forms enabled and contest has ended or is live */}
+                          {contest.sections?.forms?.enabled && (getContestStatus(contest) === 'LIVE' || getContestStatus(contest) === 'ENDED') && (
+                            <button
+                              onClick={() => navigate(`/admin/contest/evaluate/${contest._id}`)}
+                              className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
+                              title="Evaluate Form Submissions"
+                            >
+                              <CheckSquare className="w-4 h-4 text-emerald-400" />
+                            </button>
+                          )}
+
+                          {/* Edit button - disabled for organisers on approved contests */}
                           <button
                             onClick={() => navigate(`/admin/contest/edit/${contest._id}`)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="Edit"
+                            className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            title={!isAdmin && contest.verificationStatus === 'APPROVED' ? 'Locked - Contest Approved' : 'Edit'}
+                            disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
                           >
                             <Edit className="w-4 h-4 text-yellow-400" />
                           </button>
 
+                          {/* Delete button - disabled for organisers on approved contests */}
                           <button
                             onClick={() => handleDeleteContest(contest._id)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="Delete"
+                            className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            title={!isAdmin && contest.verificationStatus === 'APPROVED' ? 'Locked - Contest Approved' : 'Delete'}
+                            disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
                           >
                             <Trash2 className="w-4 h-4 text-red-400" />
                           </button>

@@ -12,6 +12,17 @@ const mcqSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Is this library question visible to organisers? (Only admin can set this)
+  isPublic: {
+    type: Boolean,
+    default: true
+  },
+  // Who created this library question (for ownership)
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   question: {
     type: String,
     required: [true, 'Question is required'],

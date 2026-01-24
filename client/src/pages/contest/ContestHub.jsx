@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useContestTimer } from '../../context/ContestTimerContext';
-import { Clock, FileText, Code, Send, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Clock, FileText, Code, Send, ArrowLeft, CheckCircle, ClipboardList } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/authService';
 import codingService from '../../services/codingService';
@@ -296,6 +296,35 @@ const ContestHub = () => {
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-400">{contest.sections.coding.totalMarks} points</span>
                                 <span className="text-green-500 group-hover:translate-x-2 transition-transform">
+                                    Continue →
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Forms Section */}
+                    {contest?.sections?.forms?.enabled && (
+                        <div className="card hover:border-primary-500 transition-all cursor-pointer group"
+                            onClick={() => navigate(`/contest/${contestId}/forms`)}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-3 bg-cyan-500/20 rounded-lg">
+                                    <ClipboardList className="w-8 h-8 text-cyan-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold">Forms Section</h3>
+                                    <p className="text-gray-400 text-sm">Custom Assessment Forms</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <p className="text-gray-400 text-sm">
+                                    Fill out assessment forms for this contest
+                                </p>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-400">{contest.sections.forms.totalMarks} points</span>
+                                <span className="text-cyan-500 group-hover:translate-x-2 transition-transform">
                                     Continue →
                                 </span>
                             </div>

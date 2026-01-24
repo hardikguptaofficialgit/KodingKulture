@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ContestTimerProvider } from './context/ContestTimerContext';
@@ -17,6 +17,7 @@ import ContestDetails from './pages/contest/ContestDetails';
 import ContestHub from './pages/contest/ContestHub';
 import MCQSection from './pages/contest/MCQSection';
 import CodingSection from './pages/contest/CodingSection';
+import FormSection from './pages/contest/FormSection';
 import ContestReview from './pages/contest/ContestReview';
 import UserDashboard from './pages/dashboard/UserDashboard';
 import Leaderboard from './pages/leaderboard/Leaderboard';
@@ -30,6 +31,15 @@ import MCQLibrary from './pages/admin/MCQLibrary';
 import CodingLibrary from './pages/admin/CodingLibrary';
 import ContestViolations from './pages/admin/ContestViolations';
 import ContestParticipants from './pages/admin/ContestParticipants';
+import UserManagement from './pages/admin/UserManagement';
+import VerifyContests from './pages/admin/VerifyContests';
+import FormBuilder from './pages/admin/FormBuilder';
+import FormEvaluation from './pages/admin/FormEvaluation';
+import AdminRooms from './pages/admin/AdminRooms';
+import MyRooms from './pages/rooms/MyRooms';
+import CreateRoom from './pages/rooms/CreateRoom';
+import RoomDetail from './pages/rooms/RoomDetail';
+import JoinRoom from './pages/rooms/JoinRoom';
 import Loader from './components/common/Loader';
 import ProctorGuard from './components/contest/ProctorGuard';
 
@@ -61,6 +71,25 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Admin or Organiser Route Component
+const AdminOrOrganiserRoute = ({ children }) => {
+  const { isAuthenticated, isAdminOrOrganiser, loading } = useAuth();
+
+  if (loading) {
+    return <Loader fullScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdminOrOrganiser) {
     return <Navigate to="/" replace />;
   }
 
@@ -99,10 +128,40 @@ const ContestWithTimer = ({ children }) => {
   );
 };
 
-// Proctored Contest Wrapper (for MCQ and Coding sections)
-const ProctoredContest = ({ children }) => {
+// Proctored Contest Wrapper (for MCQ, Coding, and Forms sections)
+const ProctoredContest = ({ children, sectionType = 'mcq' }) => {
   const { contestId } = useParams();
   const navigate = useNavigate();
+  const [proctorEnabled, setProctorEnabled] = useState(false); // Default to false to avoid forced proctoring on error
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const checkProctoring = async () => {
+      try {
+        const response = await api.get(`/contests/${contestId}`);
+        if (!mounted) return;
+
+        const contest = response.data.contest;
+        const isProctored = contest?.sections?.[sectionType]?.proctored ?? false;
+        setProctorEnabled(isProctored);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching contest:', error);
+        if (!mounted) return;
+        setProctorEnabled(false);
+        setError('Could not load contest settings');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    checkProctoring();
+
+    return () => { mounted = false; };
+  }, [contestId, sectionType]);
 
   const handleAutoSubmit = async (reason) => {
     try {
@@ -135,9 +194,20 @@ const ProctoredContest = ({ children }) => {
     }, 2000);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading section...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ContestTimerProvider contestId={contestId}>
-      <ProctorGuard contestId={contestId} onAutoSubmit={handleAutoSubmit} enabled={true}>
+      <ProctorGuard contestId={contestId} onAutoSubmit={handleAutoSubmit} enabled={proctorEnabled}>
         {children}
       </ProctorGuard>
     </ContestTimerProvider>
@@ -212,7 +282,7 @@ function App() {
             path="/contest/:contestId/mcq"
             element={
               <ProtectedRoute>
-                <ProctoredContest>
+                <ProctoredContest sectionType="mcq">
                   <MCQSection />
                 </ProctoredContest>
               </ProtectedRoute>
@@ -223,8 +293,19 @@ function App() {
             path="/contest/:contestId/coding"
             element={
               <ProtectedRoute>
-                <ProctoredContest>
+                <ProctoredContest sectionType="coding">
                   <CodingSection />
+                </ProctoredContest>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/contest/:contestId/forms"
+            element={
+              <ProtectedRoute>
+                <ProctoredContest sectionType="forms">
+                  <FormSection />
                 </ProctoredContest>
               </ProtectedRoute>
             }
@@ -251,49 +332,77 @@ function App() {
             }
           />
 
-          {/* Admin Routes */}
+          {/* Admin/Organiser Routes */}
           <Route
             path="/admin/dashboard"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><AdminDashboard /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
           <Route
             path="/admin/contest/create"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><CreateContest /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
           <Route
             path="/admin/contest/edit/:contestId"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><CreateContest /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
           <Route
             path="/admin/contest/mcq/:contestId"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><ManageMCQ /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
           <Route
             path="/admin/contest/coding/:contestId"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><ManageCodingProblems /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          {/* Form Builder Routes */}
+          <Route
+            path="/admin/contest/forms/:contestId"
+            element={
+              <AdminOrOrganiserRoute>
+                <Layout><FormBuilder /></Layout>
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          <Route
+            path="/admin/contest/forms/:contestId/:formId"
+            element={
+              <AdminOrOrganiserRoute>
+                <Layout><FormBuilder /></Layout>
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          <Route
+            path="/admin/contest/evaluate/:contestId"
+            element={
+              <AdminOrOrganiserRoute>
+                <Layout><FormEvaluation /></Layout>
+              </AdminOrOrganiserRoute>
             }
           />
 
@@ -316,13 +425,33 @@ function App() {
             }
           />
 
+          {/* User Management Route */}
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <Layout><UserManagement /></Layout>
+              </AdminRoute>
+            }
+          />
+
+          {/* Contest Verification Route */}
+          <Route
+            path="/admin/verify-contests"
+            element={
+              <AdminRoute>
+                <Layout><VerifyContests /></Layout>
+              </AdminRoute>
+            }
+          />
+
           {/* Proctoring Violations Route */}
           <Route
             path="/admin/contest/:contestId/violations"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <ContestViolations />
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
@@ -330,9 +459,56 @@ function App() {
           <Route
             path="/admin/contest/:contestId/participants"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <ContestParticipants />
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          {/* Admin Rooms Route */}
+          <Route
+            path="/admin/rooms"
+            element={
+              <AdminRoute>
+                <Layout><AdminRooms /></Layout>
               </AdminRoute>
+            }
+          />
+
+          {/* Room Routes */}
+          <Route
+            path="/rooms"
+            element={
+              <ProtectedRoute>
+                <Layout><MyRooms /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/rooms/create"
+            element={
+              <AdminOrOrganiserRoute>
+                <Layout><CreateRoom /></Layout>
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          <Route
+            path="/rooms/:roomId"
+            element={
+              <ProtectedRoute>
+                <Layout><RoomDetail /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/rooms/join/:shortCode"
+            element={
+              <ProtectedRoute>
+                <Layout><JoinRoom /></Layout>
+              </ProtectedRoute>
             }
           />
 

@@ -13,7 +13,7 @@ const MCQ_CATEGORIES = ['GENERAL', 'APTITUDE', 'TECHNICAL', 'REASONING', 'ENTREP
 const ManageMCQ = () => {
   const { contestId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrOrganiser } = useAuth();
 
   const [mcqs, setMcqs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,13 +46,13 @@ const ManageMCQ = () => {
   });
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdminOrOrganiser) {
       toast.error('Access denied');
       navigate('/');
       return;
     }
     fetchMCQs();
-  }, [contestId, isAdmin]);
+  }, [contestId, isAdminOrOrganiser]);
 
   const fetchMCQs = async () => {
     try {

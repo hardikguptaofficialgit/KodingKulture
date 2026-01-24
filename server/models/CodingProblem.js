@@ -12,6 +12,17 @@ const codingProblemSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Is this library problem visible to organisers? (Only admin can set this)
+  isPublic: {
+    type: Boolean,
+    default: true
+  },
+  // Who created this library problem (for ownership)
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   title: {
     type: String,
     required: [true, 'Problem title is required'],

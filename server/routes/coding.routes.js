@@ -14,29 +14,28 @@ import {
   getProblemMetrics
 } from '../controllers/coding.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
-import { adminOnly } from '../middlewares/admin.middleware.js';
+import { adminOnly, adminOrOrganiser } from '../middlewares/admin.middleware.js';
 
 const router = express.Router();
 
-// Library routes (must be before /:id routes)
-router.get('/library', protect, adminOnly, getLibraryProblems);
-router.post('/library', protect, adminOnly, createLibraryProblem);
+// Library routes - Read+Create for Admin/Organiser, Update/Delete for Admin only
+router.get('/library', protect, adminOrOrganiser, getLibraryProblems);
+router.post('/library', protect, adminOrOrganiser, createLibraryProblem);
 router.put('/library/:id', protect, adminOnly, updateLibraryProblem);
 router.delete('/library/:id', protect, adminOnly, deleteLibraryProblem);
 
-// Contest-library linking routes
-router.post('/contest/:contestId/add-from-library', protect, adminOnly, addLibraryProblemsToContest);
-router.delete('/contest/:contestId/problem/:problemId', protect, adminOnly, removeProblemFromContest);
+// Contest-library linking routes - Admin or Organiser
+router.post('/contest/:contestId/add-from-library', protect, adminOrOrganiser, addLibraryProblemsToContest);
+router.delete('/contest/:contestId/problem/:problemId', protect, adminOrOrganiser, removeProblemFromContest);
 
 // Contest routes
 router.get('/contest/:contestId', protect, getCodingProblemsByContest);
 
-// Problem CRUD routes
+// Problem CRUD routes - Admin or Organiser
 router.get('/:id', protect, getCodingProblemById);
-router.post('/', protect, adminOnly, createCodingProblem);
-router.put('/:id', protect, adminOnly, updateCodingProblem);
-router.delete('/:id', protect, adminOnly, deleteCodingProblem);
-router.get('/:id/metrics', protect, adminOnly, getProblemMetrics);
+router.post('/', protect, adminOrOrganiser, createCodingProblem);
+router.put('/:id', protect, adminOrOrganiser, updateCodingProblem);
+router.delete('/:id', protect, adminOrOrganiser, deleteCodingProblem);
+router.get('/:id/metrics', protect, adminOrOrganiser, getProblemMetrics);
 
 export default router;
-

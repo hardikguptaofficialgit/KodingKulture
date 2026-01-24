@@ -111,9 +111,17 @@ export const ContestTimerProvider = ({ children, contestId }) => {
         const timer = setInterval(() => {
             setRemainingTime(prev => {
                 if (prev <= 1) {
-                    // Time's up - auto submit
+                    // Time's up - auto submit with MCQ answers from localStorage
                     toast.error('Time is up! Auto-submitting...');
-                    finalSubmit();
+
+                    // Read MCQ answers from localStorage
+                    const mcqAnswers = JSON.parse(localStorage.getItem(`mcq_answers_${contestId}`) || '{}');
+                    const formattedAnswers = Object.entries(mcqAnswers).map(([mcqId, selectedOptions]) => ({
+                        mcqId,
+                        selectedOptions
+                    }));
+
+                    finalSubmit(formattedAnswers);
                     return 0;
                 }
                 return prev - 1;
@@ -121,7 +129,7 @@ export const ContestTimerProvider = ({ children, contestId }) => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isStarted, remainingTime]);
+    }, [isStarted, remainingTime, contestId]);
 
     // Warn user when trying to leave/close browser during active contest
     useEffect(() => {

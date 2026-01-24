@@ -153,3 +153,26 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     throw error;
   }
 };
+
+// Generic send mail function
+export const sendMail = async ({ to, subject, html }) => {
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error('Email send error:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('Email sent successfully:', data?.id);
+    return { success: true, messageId: data?.id };
+  } catch (error) {
+    console.error('Email service error:', error);
+    throw error;
+  }
+};

@@ -162,9 +162,21 @@ const ProctorGuard = ({
         }
     }, [enabled, logViolation]);
 
-    // Handle copy/paste attempts
+    // Handle copy/paste attempts - allow only in code editor
     const handleCopyPaste = useCallback((e, type) => {
         if (!enabled) return;
+
+        // Allow copy/paste inside Monaco editor (code editor)
+        const target = e.target;
+        const isInCodeEditor = target.closest('.monaco-editor') ||
+            target.closest('[data-allow-copy-paste]') ||
+            target.classList.contains('monaco-editor') ||
+            target.classList.contains('inputarea');
+
+        if (isInCodeEditor) {
+            return; // Allow copy/paste in code editor
+        }
+
         e.preventDefault();
         logViolation(type, `User attempted to ${type.toLowerCase().replace('_', ' ')}`);
     }, [enabled, logViolation]);

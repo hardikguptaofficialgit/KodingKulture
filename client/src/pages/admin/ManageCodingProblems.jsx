@@ -13,7 +13,7 @@ const CODING_CATEGORIES = ['GENERAL', 'DSA', 'ALGORITHMS', 'DATABASE', 'SYSTEM_D
 const ManageCodingProblems = () => {
   const { contestId } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrOrganiser } = useAuth();
 
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,13 +47,13 @@ const ManageCodingProblems = () => {
   });
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdminOrOrganiser) {
       toast.error('Access denied');
       navigate('/');
       return;
     }
     fetchProblems();
-  }, [contestId, isAdmin]);
+  }, [contestId, isAdminOrOrganiser]);
 
   const fetchProblems = async () => {
     try {

@@ -4,6 +4,7 @@ import ContestProgress from '../models/ContestProgress.js';
 import User from '../models/User.js';
 import MCQ from '../models/MCQ.js';
 import CodingProblem from '../models/CodingProblem.js';
+import FormSubmission from '../models/FormSubmission.js';
 
 // @desc    Generate certificate for user
 // @route   POST /api/leaderboard/:contestId/certificate
@@ -67,6 +68,10 @@ export const getLeaderboard = async (req, res) => {
   try {
     const { contestId } = req.params;
 
+    // Get contest to check if forms are enabled
+    const contest = await Contest.findById(contestId).lean();
+    const formsEnabled = contest?.sections?.forms?.enabled;
+
     const results = await Result.find({
       contestId,
       status: { $in: ['SUBMITTED', 'EVALUATED'] }
@@ -75,9 +80,42 @@ export const getLeaderboard = async (req, res) => {
       .sort({ totalScore: -1, timeTaken: 1 })
       .lean();
 
-    // Assign ranks with tie-breaker
+    // Get forms scores if forms are enabled
+    let formScoresMap = {};
+    if (formsEnabled) {
+      const formSubmissions = await FormSubmission.aggregate([
+        { $match: { contestId: contest._id } },
+        {
+          $group: {
+            _id: '$userId',
+            totalFormsScore: { $sum: '$totalScore' },
+            isFullyEvaluated: { $min: { $cond: ['$isFullyEvaluated', 1, 0] } }
+          }
+        }
+      ]);
+
+      formSubmissions.forEach(sub => {
+        formScoresMap[sub._id.toString()] = {
+          formsScore: sub.totalFormsScore,
+          isFormsEvaluated: sub.isFullyEvaluated === 1
+        };
+      });
+    }
+
+    // Assign ranks with tie-breaker and add forms scores
     let currentRank = 1;
     for (let i = 0; i < results.length; i++) {
+      const userId = results[i].userId._id.toString();
+
+      // Add forms scores to result
+      if (formsEnabled && formScoresMap[userId]) {
+        results[i].formsScore = formScoresMap[userId].formsScore;
+        results[i].isFormsEvaluated = formScoresMap[userId].isFormsEvaluated;
+      } else {
+        results[i].formsScore = 0;
+        results[i].isFormsEvaluated = !formsEnabled;
+      }
+
       if (i > 0) {
         const prev = results[i - 1];
         const curr = results[i];
@@ -99,6 +137,7 @@ export const getLeaderboard = async (req, res) => {
     res.status(200).json({
       success: true,
       count: results.length,
+      formsEnabled,
       leaderboard: results
     });
   } catch (error) {
@@ -188,16 +227,16 @@ export const getContestStats = async (req, res) => {
 
 // @desc    Get detailed user time stats (Admin only)
 // @route   GET /api/leaderboard/:contestId/user/:userId/details
-// @access  Private (Admin only)
+// @access  Private (Admin or Organiser)
 export const getUserDetailedStats = async (req, res) => {
   try {
     const { contestId, userId } = req.params;
 
-    // Check if requester is admin
-    if (req.user.role !== 'ADMIN') {
+    // Check if requester is admin or organiser
+    if (req.user.role !== 'ADMIN' && req.user.role !== 'ORGANISER') {
       return res.status(403).json({
         success: false,
-        message: 'Admin access required'
+        message: 'Admin or Organiser access required'
       });
     }
 
@@ -262,6 +301,21 @@ export const getUserDetailedStats = async (req, res) => {
       codingCategoryTime[cat] = (codingCategoryTime[cat] || 0) + p.timeSpent;
     });
 
+    // Get forms time from FormSubmission
+    const formSubmissions = await FormSubmission.find({ contestId, userId })
+      .populate('formId', 'title')
+      .lean();
+
+    const formsSectionTime = formSubmissions.reduce((total, sub) => total + (sub.timeTaken || 0), 0);
+    const formsTimeDetails = formSubmissions.map(sub => ({
+      formId: sub.formId?._id || sub.formId,
+      title: sub.formId?.title || 'Unknown Form',
+      timeSpent: sub.timeTaken || 0,
+      score: sub.totalScore || 0,
+      maxScore: sub.maxPossibleScore || 0,
+      isEvaluated: sub.isFullyEvaluated
+    }));
+
     res.status(200).json({
       success: true,
       userDetails: {
@@ -275,18 +329,21 @@ export const getUserDetailedStats = async (req, res) => {
         // Section-level summaries
         mcqSectionTime: progress.mcqProgress?.sectionTimeSpent || 0,
         codingSectionTime: progress.codingProgress?.sectionTimeSpent || 0,
+        formsSectionTime,
 
         // Category-wise breakdown
         mcqCategoryTime,
         codingCategoryTime,
 
-        // Per-question/problem details
+        // Per-question/problem/form details
         mcqTimeDetails,
         codingTimeDetails,
+        formsTimeDetails,
 
         // Scores
         mcqScore: result?.mcqScore || 0,
         codingScore: result?.codingScore || 0,
+        formsScore: formSubmissions.reduce((total, sub) => total + (sub.totalScore || 0), 0),
         totalScore: result?.totalScore || 0,
         rank: result?.rank || null
       }
@@ -296,6 +353,52 @@ export const getUserDetailedStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching user details'
+    });
+  }
+};
+
+// @desc    Get admin leaderboard with full user details (email, phone)
+// @route   GET /api/leaderboard/:contestId/admin
+// @access  Private (Admin or Contest Owner)
+export const getAdminLeaderboard = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+
+    const results = await Result.find({
+      contestId,
+      status: { $in: ['SUBMITTED', 'EVALUATED'] }
+    })
+      .populate('userId', 'name email college phone avatar')
+      .sort({ totalScore: -1, timeTaken: 1 })
+      .lean();
+
+    // Assign ranks
+    let currentRank = 1;
+    for (let i = 0; i < results.length; i++) {
+      if (i > 0) {
+        const prev = results[i - 1];
+        const curr = results[i];
+        if (curr.totalScore === prev.totalScore && curr.timeTaken === prev.timeTaken) {
+          results[i].rank = results[i - 1].rank;
+        } else {
+          currentRank = i + 1;
+          results[i].rank = currentRank;
+        }
+      } else {
+        results[i].rank = currentRank;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      count: results.length,
+      leaderboard: results
+    });
+  } catch (error) {
+    console.error('Get admin leaderboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching admin leaderboard'
     });
   }
 };
