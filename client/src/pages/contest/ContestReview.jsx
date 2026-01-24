@@ -13,9 +13,8 @@ import {
     ChevronLeft,
     ChevronRight,
     ClipboardList,
-    Bell,
     Clock,
-    Loader2
+    Mail
 } from 'lucide-react';
 
 const ContestReview = () => {
@@ -32,7 +31,6 @@ const ContestReview = () => {
 
     // Forms state
     const [formSubmissions, setFormSubmissions] = useState([]);
-    const [requestingNotify, setRequestingNotify] = useState(false);
 
     useEffect(() => {
         fetchReviewData();
@@ -56,22 +54,6 @@ const ContestReview = () => {
             console.error('Error fetching review:', error);
             toast.error('Failed to load review data');
             setLoading(false);
-        }
-    };
-
-    const handleRequestNotification = async (submissionId) => {
-        try {
-            setRequestingNotify(true);
-            await api.post(`/form-submissions/${submissionId}/request-notification`);
-            toast.success('You will be notified via email when your submission is reviewed!');
-            // Update local state
-            setFormSubmissions(prev => prev.map(sub =>
-                sub._id === submissionId ? { ...sub, notifyOnEvaluate: true } : sub
-            ));
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to request notification');
-        } finally {
-            setRequestingNotify(false);
         }
     };
 
@@ -341,26 +323,10 @@ const ContestReview = () => {
                                                 Your form submission is being reviewed by the evaluator.
                                                 Results will be available once evaluation is complete.
                                             </p>
-
-                                            {!submission.notifyOnEvaluate ? (
-                                                <button
-                                                    onClick={() => handleRequestNotification(submission._id)}
-                                                    disabled={requestingNotify}
-                                                    className="btn-secondary inline-flex items-center gap-2"
-                                                >
-                                                    {requestingNotify ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <Bell className="w-4 h-4" />
-                                                    )}
-                                                    Notify Me When Reviewed
-                                                </button>
-                                            ) : (
-                                                <span className="text-green-400 flex items-center justify-center gap-2">
-                                                    <CheckCircle className="w-4 h-4" />
-                                                    You will be notified via email when reviewed
-                                                </span>
-                                            )}
+                                            <span className="text-green-400 flex items-center justify-center gap-2">
+                                                <Mail className="w-4 h-4" />
+                                                You will be notified via email when reviewed
+                                            </span>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
