@@ -379,10 +379,10 @@ const AdminDashboard = () => {
                           {contest.sections?.mcq?.enabled && (
                             <button
                               onClick={() => navigate(`/admin/contest/mcq/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                               title="Manage MCQs"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
                             >
                               <FileQuestion className="w-4 h-4 text-purple-400" />
                             </button>
@@ -392,10 +392,10 @@ const AdminDashboard = () => {
                           {contest.sections?.coding?.enabled && (
                             <button
                               onClick={() => navigate(`/admin/contest/coding/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                               title="Manage Coding Problems"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
                             >
                               <Code className="w-4 h-4 text-orange-400" />
                             </button>
@@ -405,10 +405,10 @@ const AdminDashboard = () => {
                           {contest.sections?.forms?.enabled && (
                             <button
                               onClick={() => navigate(`/admin/contest/forms/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
+                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                               title="Manage Forms"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
+                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
                             >
                               <ClipboardList className="w-4 h-4 text-cyan-400" />
                             </button>

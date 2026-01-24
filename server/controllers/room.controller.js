@@ -117,7 +117,8 @@ export const getRoomById = async (req, res) => {
 
         // Get contests in this room
         const contests = await Contest.find({ roomId: room._id })
-            .select('title description startTime endTime status sections')
+            .select('title description startTime endTime status sections createdBy')
+            .populate('createdBy', 'name email')
             .sort({ startTime: -1 });
 
         res.status(200).json({

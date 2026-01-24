@@ -53,11 +53,12 @@ export const contestOwner = async (req, res, next) => {
 
     // Check if organiser owns this contest
     if (req.user.role === 'ORGANISER' && contest.createdBy.toString() === req.user._id.toString()) {
-      // Organisers cannot EDIT approved contests, but can VIEW (GET requests)
-      if (contest.verificationStatus === 'APPROVED' && req.method !== 'GET') {
+      // Organisers cannot EDIT approved PUBLIC contests, but CAN edit their own ROOM contests
+      // Room contests are auto-approved but should still be editable by room organisers
+      if (contest.verificationStatus === 'APPROVED' && req.method !== 'GET' && !contest.roomId) {
         return res.status(403).json({
           success: false,
-          message: 'Contest is approved. Only admin can make changes.'
+          message: 'Public contest is approved. Only admin can make changes.'
         });
       }
       return next();
