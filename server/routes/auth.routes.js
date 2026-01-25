@@ -22,26 +22,26 @@ import {
 const router = express.Router();
 
 // =============================================
-// PUBLIC AUTH ROUTES (with rate limiting)
+// PUBLIC AUTH ROUTES (rate limiting removed)
 // =============================================
 
-// Login - 5 attempts per 15 minutes
-router.post('/login', authLimiter, login);
+// Login
+router.post('/login', login);
 
 // Registration - legacy route (still uses OTP flow)
-router.post('/register', createAccountLimiter, register);
+router.post('/register', register);
 
-// Google OAuth - uses account limiter for new accounts
-router.post('/google', authLimiter, googleAuth);
+// Google OAuth
+router.post('/google', googleAuth);
 
-// OTP verification routes - 3 requests per 10 minutes
-router.post('/send-otp', createAccountLimiter, otpLimiter, sendSignupOTP);
-router.post('/verify-otp', otpLimiter, verifySignupOTP);
-router.post('/resend-otp', otpLimiter, resendOTP);
+// OTP verification routes
+router.post('/send-otp', sendSignupOTP);
+router.post('/verify-otp', verifySignupOTP);
+router.post('/resend-otp', resendOTP);
 
-// Forgot password routes - 3 requests per hour
-router.post('/forgot-password', passwordResetLimiter, forgotPassword);
-router.post('/reset-password', passwordResetLimiter, resetPassword);
+// Forgot password routes
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // =============================================
 // PROTECTED AUTH ROUTES
