@@ -31,6 +31,12 @@ const roomSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
+    pendingInvites: [{
+        email: { type: String, required: true },
+        token: { type: String, required: true },
+        invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        expiresAt: { type: Date, required: true }
+    }],
     isActive: {
         type: Boolean,
         default: true

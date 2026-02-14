@@ -22,6 +22,7 @@ import ContestReview from './pages/contest/ContestReview';
 import UserDashboard from './pages/dashboard/UserDashboard';
 import Leaderboard from './pages/leaderboard/Leaderboard';
 import LeaderboardList from './pages/leaderboard/LeaderboardList';
+import UserAnswerReview from './pages/leaderboard/UserAnswerReview';
 import Certificate from './pages/certificate/Certificate';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateContest from './pages/admin/CreateContest';
@@ -40,6 +41,7 @@ import MyRooms from './pages/rooms/MyRooms';
 import CreateRoom from './pages/rooms/CreateRoom';
 import RoomDetail from './pages/rooms/RoomDetail';
 import JoinRoom from './pages/rooms/JoinRoom';
+import AcceptInvite from './pages/rooms/AcceptInvite';
 import Loader from './components/common/Loader';
 import ProctorGuard from './components/contest/ProctorGuard';
 
@@ -118,7 +120,7 @@ const Layout = ({ children }) => {
   );
 };
 
-// Contest Wrapper with Timer Provider
+// Contest Wrapper with Timer Provider (used by ContestHub)
 const ContestWithTimer = ({ children }) => {
   const { contestId } = useParams();
   return (
@@ -128,6 +130,7 @@ const ContestWithTimer = ({ children }) => {
   );
 };
 
+// ProctoredContest provides both ContestTimerProvider and ProctorGuard
 // Proctored Contest Wrapper (for MCQ, Coding, and Forms sections)
 const ProctoredContest = ({ children, sectionType = 'mcq' }) => {
   const { contestId } = useParams();
@@ -410,18 +413,18 @@ function App() {
           <Route
             path="/admin/mcq-library"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><MCQLibrary /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
           <Route
             path="/admin/coding-library"
             element={
-              <AdminRoute>
+              <AdminOrOrganiserRoute>
                 <Layout><CodingLibrary /></Layout>
-              </AdminRoute>
+              </AdminOrOrganiserRoute>
             }
           />
 
@@ -461,6 +464,16 @@ function App() {
             element={
               <AdminOrOrganiserRoute>
                 <ContestParticipants />
+              </AdminOrOrganiserRoute>
+            }
+          />
+
+          {/* Admin Answer Review Route */}
+          <Route
+            path="/admin/contest/:contestId/user/:userId/answers"
+            element={
+              <AdminOrOrganiserRoute>
+                <Layout><UserAnswerReview /></Layout>
               </AdminOrOrganiserRoute>
             }
           />
@@ -508,6 +521,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout><JoinRoom /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/rooms/accept-invite/:token"
+            element={
+              <ProtectedRoute>
+                <Layout><AcceptInvite /></Layout>
               </ProtectedRoute>
             }
           />

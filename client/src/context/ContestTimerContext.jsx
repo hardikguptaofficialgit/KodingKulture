@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/authService';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -105,23 +105,27 @@ export const ContestTimerProvider = ({ children, contestId }) => {
     };
 
     // Timer countdown effect
+    const hasAutoSubmittedRef = useRef(false);
     useEffect(() => {
         if (!isStarted || remainingTime === null) return;
 
         const timer = setInterval(() => {
             setRemainingTime(prev => {
                 if (prev <= 1) {
-                    // Time's up - auto submit with MCQ answers from localStorage
-                    toast.error('Time is up! Auto-submitting...');
+                    if (!hasAutoSubmittedRef.current) {
+                        hasAutoSubmittedRef.current = true;
+                        // Time's up - auto submit with MCQ answers from localStorage
+                        toast.error('Time is up! Auto-submitting...');
 
-                    // Read MCQ answers from localStorage
-                    const mcqAnswers = JSON.parse(localStorage.getItem(`mcq_answers_${contestId}`) || '{}');
-                    const formattedAnswers = Object.entries(mcqAnswers).map(([mcqId, selectedOptions]) => ({
-                        mcqId,
-                        selectedOptions
-                    }));
+                        // Read MCQ answers from localStorage
+                        const mcqAnswers = JSON.parse(localStorage.getItem(`mcq_answers_${contestId}`) || '{}');
+                        const formattedAnswers = Object.entries(mcqAnswers).map(([mcqId, selectedOptions]) => ({
+                            mcqId,
+                            selectedOptions
+                        }));
 
-                    finalSubmit(formattedAnswers);
+                        finalSubmit(formattedAnswers);
+                    }
                     return 0;
                 }
                 return prev - 1;
@@ -129,7 +133,8 @@ export const ContestTimerProvider = ({ children, contestId }) => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isStarted, remainingTime, contestId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isStarted, contestId]);
 
     // Warn user when trying to leave/close browser during active contest
     useEffect(() => {

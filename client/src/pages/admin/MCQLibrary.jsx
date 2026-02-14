@@ -19,12 +19,13 @@ const MCQ_CATEGORIES = ['GENERAL', 'APTITUDE', 'TECHNICAL', 'REASONING', 'ENTREP
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
 
 const MCQLibrary = () => {
-    const { user } = useAuth();
+    const { user, isAdmin } = useAuth();
     const [mcqs, setMcqs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingMCQ, setEditingMCQ] = useState(null);
     const [filters, setFilters] = useState({ category: '', difficulty: '', search: '' });
+    const [poolFilter, setPoolFilter] = useState('all'); // 'all' | 'public' | 'private'
 
     // Form state
     const [formData, setFormData] = useState({
@@ -42,7 +43,8 @@ const MCQLibrary = () => {
         explanation: '',
         tags: '',
         imageUrl: null,
-        imagePublicId: null
+        imagePublicId: null,
+        isPublic: true
     });
 
     useEffect(() => {
@@ -83,7 +85,8 @@ const MCQLibrary = () => {
                     .map((opt, idx) => opt.isCorrect ? idx : -1)
                     .filter(idx => idx !== -1),
                 imageUrl: formData.imageUrl,
-                imagePublicId: formData.imagePublicId
+                imagePublicId: formData.imagePublicId,
+                isPublic: isAdmin ? formData.isPublic : false
             };
 
             if (editingMCQ) {
@@ -114,7 +117,8 @@ const MCQLibrary = () => {
             explanation: mcq.explanation || '',
             tags: mcq.tags?.join(', ') || '',
             imageUrl: mcq.imageUrl || null,
-            imagePublicId: mcq.imagePublicId || null
+            imagePublicId: mcq.imagePublicId || null,
+            isPublic: mcq.isPublic || false
         });
         setShowModal(true);
     };
@@ -148,7 +152,8 @@ const MCQLibrary = () => {
             explanation: '',
             tags: '',
             imageUrl: null,
-            imagePublicId: null
+            imagePublicId: null,
+            isPublic: true
         });
     };
 
@@ -195,6 +200,46 @@ const MCQLibrary = () => {
                     </button>
                 </div>
 
+                {/* Pool Tabs */}
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => setPoolFilter('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'all'
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        All Questions
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {mcqs.length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setPoolFilter('public')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'public'
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        🌐 Public Pool
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {mcqs.filter(m => m.isPublic).length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setPoolFilter('private')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'private'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        🔒 {isAdmin ? 'Private Pool' : 'My Questions'}
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {mcqs.filter(m => !m.isPublic).length}
+                        </span>
+                    </button>
+                </div>
+
                 {/* Filters */}
                 <div className="card mb-6">
                     <div className="flex flex-wrap gap-4">
@@ -235,88 +280,114 @@ const MCQLibrary = () => {
 
                 {/* MCQ List */}
                 <div className="space-y-4">
-                    {mcqs.length === 0 ? (
-                        <div className="card text-center py-12">
-                            <p className="text-gray-400">No MCQs in library. Create your first one!</p>
-                        </div>
-                    ) : (
-                        mcqs.map((mcq, idx) => (
-                            <div key={mcq._id} className="card hover:border-dark-600 transition-colors">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(mcq.category)}`}>
-                                                {mcq.category}
-                                            </span>
-                                            <span className={`badge-${mcq.difficulty.toLowerCase()}`}>
-                                                {mcq.difficulty}
-                                            </span>
-                                            <span className="text-gray-500 text-sm">
-                                                {mcq.marks} marks
-                                            </span>
-                                        </div>
-                                        <p className="text-lg font-medium">{mcq.question}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => handleEdit(mcq)}
-                                            className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-                                        >
-                                            <Edit className="w-4 h-4 text-blue-400" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(mcq._id)}
-                                            className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4 text-red-400" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 mb-4">
-                                    {mcq.options.map((opt, optIdx) => (
-                                        <div
-                                            key={optIdx}
-                                            className={`p-3 rounded-lg border ${opt.isCorrect
-                                                ? 'border-green-500 bg-green-500/10'
-                                                : 'border-dark-600 bg-dark-800'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                {opt.isCorrect
-                                                    ? <CheckCircle className="w-4 h-4 text-green-500" />
-                                                    : <XCircle className="w-4 h-4 text-gray-500" />
-                                                }
-                                                <span>{opt.text}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Metrics */}
-                                <div className="flex items-center gap-6 text-sm text-gray-400 border-t border-dark-700 pt-3">
-                                    <div className="flex items-center gap-1">
-                                        <BarChart3 className="w-4 h-4" />
-                                        <span>Attempted: {mcq.metrics?.attempted || 0}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-green-400">
-                                        <CheckCircle className="w-4 h-4" />
-                                        <span>Correct: {mcq.metrics?.correct || 0}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-red-400">
-                                        <XCircle className="w-4 h-4" />
-                                        <span>Wrong: {mcq.metrics?.wrong || 0}</span>
-                                    </div>
-                                    {mcq.tags?.length > 0 && (
-                                        <div className="flex items-center gap-1">
-                                            <Tag className="w-4 h-4" />
-                                            <span>{mcq.tags.join(', ')}</span>
-                                        </div>
-                                    )}
-                                </div>
+                    {(() => {
+                        const filteredMcqs = mcqs.filter(mcq => {
+                            if (poolFilter === 'public') return mcq.isPublic;
+                            if (poolFilter === 'private') return !mcq.isPublic;
+                            return true;
+                        });
+                        return filteredMcqs.length === 0 ? (
+                            <div className="card text-center py-12">
+                                <p className="text-gray-400">
+                                    {poolFilter === 'all'
+                                        ? 'No MCQs in library. Create your first one!'
+                                        : poolFilter === 'public'
+                                            ? 'No public questions in the library.'
+                                            : 'No private questions yet. Create one!'}
+                                </p>
                             </div>
-                        ))
-                    )}
+                        ) : (
+                            filteredMcqs.map((mcq, idx) => (
+                                <div key={mcq._id} className="card hover:border-dark-600 transition-colors">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(mcq.category)}`}>
+                                                    {mcq.category}
+                                                </span>
+                                                <span className={`badge-${mcq.difficulty.toLowerCase()}`}>
+                                                    {mcq.difficulty}
+                                                </span>
+                                                <span className="text-gray-500 text-sm">
+                                                    {mcq.marks} marks
+                                                </span>
+                                                {mcq.isPublic ? (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                                                        Public
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                                        Private
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-lg font-medium">{mcq.question}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {(isAdmin || (mcq.createdBy === user?._id && !mcq.isPublic)) && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEdit(mcq)}
+                                                        className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit className="w-4 h-4 text-blue-400" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(mcq._id)}
+                                                        className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-red-400" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        {mcq.options.map((opt, optIdx) => (
+                                            <div
+                                                key={optIdx}
+                                                className={`p-3 rounded-lg border ${opt.isCorrect
+                                                    ? 'border-green-500 bg-green-500/10'
+                                                    : 'border-dark-600 bg-dark-800'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {opt.isCorrect
+                                                        ? <CheckCircle className="w-4 h-4 text-green-500" />
+                                                        : <XCircle className="w-4 h-4 text-gray-500" />
+                                                    }
+                                                    <span>{opt.text}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Metrics */}
+                                    <div className="flex items-center gap-6 text-sm text-gray-400 border-t border-dark-700 pt-3">
+                                        <div className="flex items-center gap-1">
+                                            <BarChart3 className="w-4 h-4" />
+                                            <span>Attempted: {mcq.metrics?.attempted || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-green-400">
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>Correct: {mcq.metrics?.correct || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-red-400">
+                                            <XCircle className="w-4 h-4" />
+                                            <span>Wrong: {mcq.metrics?.wrong || 0}</span>
+                                        </div>
+                                        {mcq.tags?.length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <Tag className="w-4 h-4" />
+                                                <span>{mcq.tags.join(', ')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        );
+                    })()}
                 </div>
             </div>
 
@@ -442,6 +513,32 @@ const MCQLibrary = () => {
                                 onImageChange={(url, publicId) => setFormData({ ...formData, imageUrl: url, imagePublicId: publicId })}
                                 onImageRemove={() => setFormData({ ...formData, imageUrl: null, imagePublicId: null })}
                             />
+
+                            {isAdmin && (
+                                <div className="flex items-center gap-3 p-3 rounded-lg bg-dark-700/50 border border-dark-600">
+                                    <label className="text-sm font-medium">Visibility:</label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="isPublic"
+                                            checked={formData.isPublic === true}
+                                            onChange={() => setFormData({ ...formData, isPublic: true })}
+                                            className="w-4 h-4"
+                                        />
+                                        <span className="text-sm text-green-400">Public</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="isPublic"
+                                            checked={formData.isPublic === false}
+                                            onChange={() => setFormData({ ...formData, isPublic: false })}
+                                            className="w-4 h-4"
+                                        />
+                                        <span className="text-sm text-yellow-400">Private</span>
+                                    </label>
+                                </div>
+                            )}
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-dark-700">
                                 <button

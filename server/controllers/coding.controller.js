@@ -2,6 +2,19 @@ import CodingProblem from '../models/CodingProblem.js';
 import ContestCodingProblem from '../models/ContestCodingProblem.js';
 import Contest from '../models/Contest.js';
 
+// ES2025 RegExp.escape with fallback for older runtimes
+const escapeRegExp = (str) =>
+  typeof RegExp.escape === 'function'
+    ? RegExp.escape(str)
+    : str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Whitelisted fields for library problem updates
+const CODING_UPDATABLE_FIELDS = [
+  'title', 'description', 'inputFormat', 'outputFormat', 'constraints',
+  'examples', 'testcases', 'category', 'difficulty', 'score',
+  'timeLimit', 'memoryLimit', 'tags', 'imageUrl', 'imagePublicId'
+];
+
 // ============ LIBRARY ENDPOINTS ============
 
 // @desc    Get all library coding problems
@@ -28,17 +41,21 @@ export const getLibraryProblems = async (req, res) => {
     if (category) filter.category = category;
     if (difficulty) filter.difficulty = difficulty;
     if (search) {
-      const searchFilter = {
-        $or: [
-          { title: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
+      const escaped = escapeRegExp(search);
+      filter = {
+        $and: [
+          filter,
+          {
+            $or: [
+              { title: { $regex: escaped, $options: 'i' } },
+              { tags: { $in: [new RegExp(escaped, 'i')] } }
+            ]
+          }
         ]
       };
-      filter = { ...filter, ...searchFilter };
     }
 
     const problems = await CodingProblem.find(filter)
-      .select('-testcases')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -89,14 +106,10 @@ export const createLibraryProblem = async (req, res) => {
 
 // @desc    Update library coding problem
 // @route   PUT /api/coding/library/:id
-// @access  Private/Admin
+// @access  Private/Admin or Organiser (own private only)
 export const updateLibraryProblem = async (req, res) => {
   try {
-    const problem = await CodingProblem.findOneAndUpdate(
-      { _id: req.params.id, isLibrary: true },
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const problem = await CodingProblem.findOne({ _id: req.params.id, isLibrary: true });
 
     if (!problem) {
       return res.status(404).json({
@@ -104,6 +117,27 @@ export const updateLibraryProblem = async (req, res) => {
         message: 'Library problem not found'
       });
     }
+
+    // Ownership check: organisers can only edit their own private problems
+    if (req.user.role === 'ORGANISER') {
+      if (problem.createdBy?.toString() !== req.user._id.toString() || problem.isPublic) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only edit your own private problems'
+        });
+      }
+      // Prevent organiser from making their problem public
+      delete req.body.isPublic;
+    }
+
+    // Whitelist updatable fields to prevent mass-assignment
+    const allowed = req.user.role === 'ADMIN'
+      ? [...CODING_UPDATABLE_FIELDS, 'isPublic']
+      : CODING_UPDATABLE_FIELDS;
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) problem[key] = req.body[key];
+    }
+    await problem.save();
 
     res.status(200).json({
       success: true,
@@ -121,10 +155,10 @@ export const updateLibraryProblem = async (req, res) => {
 
 // @desc    Delete library coding problem
 // @route   DELETE /api/coding/library/:id
-// @access  Private/Admin
+// @access  Private/Admin or Organiser (own private only)
 export const deleteLibraryProblem = async (req, res) => {
   try {
-    const problem = await CodingProblem.findOneAndDelete({ _id: req.params.id, isLibrary: true });
+    const problem = await CodingProblem.findOne({ _id: req.params.id, isLibrary: true });
 
     if (!problem) {
       return res.status(404).json({
@@ -132,6 +166,18 @@ export const deleteLibraryProblem = async (req, res) => {
         message: 'Library problem not found'
       });
     }
+
+    // Ownership check: organisers can only delete their own private problems
+    if (req.user.role === 'ORGANISER') {
+      if (problem.createdBy?.toString() !== req.user._id.toString() || problem.isPublic) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own private problems'
+        });
+      }
+    }
+
+    await CodingProblem.findByIdAndDelete(req.params.id);
 
     // Also remove from all contests
     await ContestCodingProblem.deleteMany({ problemId: req.params.id });
@@ -170,7 +216,12 @@ export const addLibraryProblemsToContest = async (req, res) => {
 
     const addedProblems = [];
     for (const problemId of problemIds) {
-      const problem = await CodingProblem.findOne({ _id: problemId, isLibrary: true });
+      // Verify the requesting user can actually see this problem
+      let problemFilter = { _id: problemId, isLibrary: true };
+      if (req.user.role === 'ORGANISER') {
+        problemFilter.$or = [{ isPublic: true }, { createdBy: req.user._id }];
+      }
+      const problem = await CodingProblem.findOne(problemFilter);
       if (!problem) continue;
 
       const existing = await ContestCodingProblem.findOne({ contestId, problemId });
@@ -341,12 +392,14 @@ export const getCodingProblemById = async (req, res) => {
   }
 };
 
-// @desc    Create coding problem (Admin)
+// @desc    Create coding problem (Admin/Organiser) - for direct contest problems
 // @route   POST /api/coding
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const createCodingProblem = async (req, res) => {
   try {
-    const problem = await CodingProblem.create(req.body);
+    const { saveToLibrary, libraryIsPublic, ...problemBody } = req.body;
+
+    const problem = await CodingProblem.create({ ...problemBody, createdBy: req.user._id });
 
     if (problem.contestId) {
       const contest = await Contest.findById(problem.contestId);
@@ -356,10 +409,28 @@ export const createCodingProblem = async (req, res) => {
       }
     }
 
+    // Optionally save a copy to the library
+    let libraryProblem = null;
+    if (saveToLibrary) {
+      const libData = { ...problemBody };
+      delete libData.contestId;
+      delete libData.order;
+      libraryProblem = await CodingProblem.create({
+        ...libData,
+        isLibrary: true,
+        contestId: null,
+        createdBy: req.user._id,
+        isPublic: req.user.role === 'ADMIN' ? (libraryIsPublic !== false) : false
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Coding problem created successfully',
-      problem
+      message: saveToLibrary
+        ? 'Problem created and saved to library'
+        : 'Coding problem created successfully',
+      problem,
+      libraryProblem
     });
   } catch (error) {
     console.error('Create problem error:', error);

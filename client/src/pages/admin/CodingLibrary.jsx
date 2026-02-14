@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/authService';
 import toast from 'react-hot-toast';
 import ImageUpload from '../../components/common/ImageUpload';
@@ -19,11 +20,13 @@ const CODING_CATEGORIES = ['GENERAL', 'DSA', 'ALGORITHMS', 'DATABASE', 'SYSTEM_D
 const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'];
 
 const CodingLibrary = () => {
+    const { user, isAdmin } = useAuth();
     const [problems, setProblems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingProblem, setEditingProblem] = useState(null);
     const [filters, setFilters] = useState({ category: '', difficulty: '', search: '' });
+    const [poolFilter, setPoolFilter] = useState('all'); // 'all' | 'public' | 'private'
 
     const [formData, setFormData] = useState({
         title: '',
@@ -40,7 +43,8 @@ const CodingLibrary = () => {
         memoryLimit: 256,
         tags: '',
         imageUrl: null,
-        imagePublicId: null
+        imagePublicId: null,
+        isPublic: true
     });
 
     useEffect(() => {
@@ -72,7 +76,8 @@ const CodingLibrary = () => {
                 constraints: formData.constraints.split('\n').filter(Boolean),
                 tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
                 imageUrl: formData.imageUrl,
-                imagePublicId: formData.imagePublicId
+                imagePublicId: formData.imagePublicId,
+                isPublic: isAdmin ? formData.isPublic : false
             };
 
             if (editingProblem) {
@@ -108,7 +113,8 @@ const CodingLibrary = () => {
             memoryLimit: problem.memoryLimit,
             tags: problem.tags?.join(', ') || '',
             imageUrl: problem.imageUrl || null,
-            imagePublicId: problem.imagePublicId || null
+            imagePublicId: problem.imagePublicId || null,
+            isPublic: problem.isPublic || false
         });
         setShowModal(true);
     };
@@ -142,7 +148,8 @@ const CodingLibrary = () => {
             memoryLimit: 256,
             tags: '',
             imageUrl: null,
-            imagePublicId: null
+            imagePublicId: null,
+            isPublic: true
         });
     };
 
@@ -209,6 +216,46 @@ const CodingLibrary = () => {
                     </button>
                 </div>
 
+                {/* Pool Tabs */}
+                <div className="flex gap-2 mb-6">
+                    <button
+                        onClick={() => setPoolFilter('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'all'
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        All Problems
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {problems.length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setPoolFilter('public')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'public'
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        🌐 Public Pool
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {problems.filter(p => p.isPublic).length}
+                        </span>
+                    </button>
+                    <button
+                        onClick={() => setPoolFilter('private')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'private'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            }`}
+                    >
+                        🔒 {isAdmin ? 'Private Pool' : 'My Problems'}
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
+                            {problems.filter(p => !p.isPublic).length}
+                        </span>
+                    </button>
+                </div>
+
                 {/* Filters */}
                 <div className="card mb-6">
                     <div className="flex flex-wrap gap-4">
@@ -249,69 +296,95 @@ const CodingLibrary = () => {
 
                 {/* Problem List */}
                 <div className="space-y-4">
-                    {problems.length === 0 ? (
-                        <div className="card text-center py-12">
-                            <p className="text-gray-400">No problems in library. Create your first one!</p>
-                        </div>
-                    ) : (
-                        problems.map((problem) => (
-                            <div key={problem._id} className="card hover:border-dark-600 transition-colors">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Code className="w-5 h-5 text-primary-500" />
-                                            <h3 className="text-lg font-bold">{problem.title}</h3>
-                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(problem.category)}`}>
-                                                {problem.category}
-                                            </span>
-                                            <span className={`badge-${problem.difficulty.toLowerCase()}`}>
-                                                {problem.difficulty}
-                                            </span>
-                                        </div>
-                                        <p className="text-gray-400 line-clamp-2">{problem.description}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => handleEdit(problem)}
-                                            className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-                                        >
-                                            <Edit className="w-4 h-4 text-blue-400" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(problem._id)}
-                                            className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4 text-red-400" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-6 text-sm text-gray-400 border-t border-dark-700 pt-3">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-primary-400 font-semibold">{problem.score}</span> points
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" />
-                                        <span>{problem.timeLimit}s limit</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <BarChart3 className="w-4 h-4" />
-                                        <span>Attempted: {problem.metrics?.attempted || 0}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-green-400">
-                                        <CheckCircle className="w-4 h-4" />
-                                        <span>Accepted: {problem.metrics?.accepted || 0}</span>
-                                    </div>
-                                    {problem.tags?.length > 0 && (
-                                        <div className="flex items-center gap-1">
-                                            <Tag className="w-4 h-4" />
-                                            <span>{problem.tags.join(', ')}</span>
-                                        </div>
-                                    )}
-                                </div>
+                    {(() => {
+                        const filteredProblems = problems.filter(problem => {
+                            if (poolFilter === 'public') return problem.isPublic;
+                            if (poolFilter === 'private') return !problem.isPublic;
+                            return true;
+                        });
+                        return filteredProblems.length === 0 ? (
+                            <div className="card text-center py-12">
+                                <p className="text-gray-400">
+                                    {poolFilter === 'all'
+                                        ? 'No problems in library. Create your first one!'
+                                        : poolFilter === 'public'
+                                            ? 'No public problems in the library.'
+                                            : 'No private problems yet. Create one!'}
+                                </p>
                             </div>
-                        ))
-                    )}
+                        ) : (
+                            filteredProblems.map((problem) => (
+                                <div key={problem._id} className="card hover:border-dark-600 transition-colors">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Code className="w-5 h-5 text-primary-500" />
+                                                <h3 className="text-lg font-bold">{problem.title}</h3>
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(problem.category)}`}>
+                                                    {problem.category}
+                                                </span>
+                                                <span className={`badge-${problem.difficulty.toLowerCase()}`}>
+                                                    {problem.difficulty}
+                                                </span>
+                                                {problem.isPublic ? (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                                                        Public
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                                                        Private
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-gray-400 line-clamp-2">{problem.description}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {(isAdmin || (problem.createdBy === user?._id && !problem.isPublic)) && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEdit(problem)}
+                                                        className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit className="w-4 h-4 text-blue-400" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(problem._id)}
+                                                        className="p-2 hover:bg-dark-700 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-red-400" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-6 text-sm text-gray-400 border-t border-dark-700 pt-3">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-primary-400 font-semibold">{problem.score}</span> points
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Clock className="w-4 h-4" />
+                                            <span>{problem.timeLimit}s limit</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <BarChart3 className="w-4 h-4" />
+                                            <span>Attempted: {problem.metrics?.attempted || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-green-400">
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>Accepted: {problem.metrics?.accepted || 0}</span>
+                                        </div>
+                                        {problem.tags?.length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <Tag className="w-4 h-4" />
+                                                <span>{problem.tags.join(', ')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        );
+                    })()}
                 </div>
             </div>
 
@@ -454,6 +527,32 @@ const CodingLibrary = () => {
                                 onImageChange={(url, publicId) => setFormData({ ...formData, imageUrl: url, imagePublicId: publicId })}
                                 onImageRemove={() => setFormData({ ...formData, imageUrl: null, imagePublicId: null })}
                             />
+
+                            {isAdmin && (
+                                <div className="flex items-center gap-3 p-3 rounded-lg bg-dark-700/50 border border-dark-600">
+                                    <label className="text-sm font-medium">Visibility:</label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="isPublic"
+                                            checked={formData.isPublic === true}
+                                            onChange={() => setFormData({ ...formData, isPublic: true })}
+                                            className="w-4 h-4"
+                                        />
+                                        <span className="text-sm text-green-400">Public</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="isPublic"
+                                            checked={formData.isPublic === false}
+                                            onChange={() => setFormData({ ...formData, isPublic: false })}
+                                            className="w-4 h-4"
+                                        />
+                                        <span className="text-sm text-yellow-400">Private</span>
+                                    </label>
+                                </div>
+                            )}
 
                             <div className="flex justify-end gap-3 pt-4 border-t border-dark-700">
                                 <button

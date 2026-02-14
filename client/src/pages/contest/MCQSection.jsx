@@ -166,7 +166,7 @@ const MCQSection = () => {
     if (!mcq || !mcq.options) return;
 
     // Determine if multiple answers based on options (since correctAnswers might be hidden)
-    const correctCount = mcq.options.filter(opt => opt.isCorrect).length;
+    const correctCount = mcq.questionType === 'MULTIPLE' ? 2 : 1;
     const isMultipleAnswer = correctCount > 1;
 
     if (isMultipleAnswer) {
@@ -224,7 +224,7 @@ const MCQSection = () => {
 
     const unanswered = mcqs.filter(mcq => !answers[mcq._id] || answers[mcq._id].length === 0);
 
-    if (unanswered.length > 0 && timeRemaining > 0) {
+    if (unanswered.length > 0 && remainingTime > 0) {
       const confirm = window.confirm(
         `You have ${unanswered.length} unanswered question(s). Are you sure you want to submit?`
       );
@@ -242,7 +242,7 @@ const MCQSection = () => {
       const response = await mcqService.submitMCQAnswers(contestId, formattedAnswers);
 
       toast.success('MCQ section submitted successfully!');
-      navigate(`/contest/${contestId}/result`);
+      navigate(`/contest/${contestId}/hub`);
     } catch (error) {
       console.error('Error submitting answers:', error);
       toast.error(error.response?.data?.message || 'Failed to submit answers');
@@ -262,12 +262,7 @@ const MCQSection = () => {
     });
   };
 
-  const formatTime = (seconds) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  // formatTime removed — component uses formattedTime from useContestTimer()
 
   if (loading) {
     return (
@@ -305,7 +300,7 @@ const MCQSection = () => {
   }
 
   // Determine if multiple answers based on options (since correctAnswers is hidden)
-  const isMultipleAnswer = currentMCQ.options.filter(opt => opt.isCorrect).length > 1;
+  const isMultipleAnswer = currentMCQ.questionType === 'MULTIPLE';
   const selectedOptions = answers[currentMCQ._id] || [];
 
   return (
@@ -336,7 +331,7 @@ const MCQSection = () => {
               </div>
 
               <button
-                onClick={() => navigate(`/contest/${contestId}/hub`)}
+                onClick={handleSaveAndBackToHub}
                 className="btn-secondary"
               >
                 Save & Back to Hub

@@ -16,6 +16,7 @@ const ProctorGuard = ({
     const maxWarnings = 3;
     const isProcessingRef = useRef(false);
     const hasAutoSubmittedRef = useRef(false);
+    const warningCountRef = useRef(0);
 
     // Request fullscreen
     const enterFullscreen = useCallback(async () => {
@@ -39,8 +40,9 @@ const ProctorGuard = ({
         if (isProcessingRef.current || hasAutoSubmittedRef.current) return;
         isProcessingRef.current = true;
 
-        // INSTANT: Show warning immediately before API call
-        const newWarningCount = warningCount + 1;
+        // Use ref for accurate count (avoids stale closure on rapid events)
+        const newWarningCount = warningCountRef.current + 1;
+        warningCountRef.current = newWarningCount;
         setWarningCount(newWarningCount);
         setViolationType(type);
         setShowWarning(true);
@@ -68,7 +70,7 @@ const ProctorGuard = ({
         } finally {
             isProcessingRef.current = false;
         }
-    }, [contestId, onAutoSubmit, warningCount, maxWarnings]);
+    }, [contestId, onAutoSubmit, maxWarnings]);
 
     // Handle visibility change (tab switch) - INSTANT
     const handleVisibilityChange = useCallback(() => {

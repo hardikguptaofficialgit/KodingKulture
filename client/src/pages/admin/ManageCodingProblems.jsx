@@ -20,6 +20,8 @@ const ManageCodingProblems = () => {
   const [showForm, setShowForm] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [editingProblem, setEditingProblem] = useState(null);
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
+  const [libraryIsPublic, setLibraryIsPublic] = useState(true);
 
   // Library state
   const [libraryProblems, setLibraryProblems] = useState([]);
@@ -136,6 +138,8 @@ const ManageCodingProblems = () => {
       imagePublicId: null
     });
     setEditingProblem(null);
+    setSaveToLibrary(false);
+    setLibraryIsPublic(true);
     setShowForm(false);
   };
 
@@ -270,7 +274,11 @@ const ManageCodingProblems = () => {
         timeLimit: parseInt(formData.timeLimit),
         memoryLimit: parseInt(formData.memoryLimit),
         imageUrl: formData.imageUrl,
-        imagePublicId: formData.imagePublicId
+        imagePublicId: formData.imagePublicId,
+        ...((!editingProblem && saveToLibrary) ? {
+          saveToLibrary: true,
+          libraryIsPublic: isAdmin ? libraryIsPublic : false
+        } : {})
       };
 
       if (editingProblem) {
@@ -278,7 +286,7 @@ const ManageCodingProblems = () => {
         toast.success('Problem updated successfully');
       } else {
         await adminService.createCodingProblem(problemData);
-        toast.success('Problem created successfully');
+        toast.success(saveToLibrary ? 'Problem created & saved to library' : 'Problem created successfully');
       }
 
       resetForm();
@@ -640,6 +648,48 @@ const ManageCodingProblems = () => {
                 onImageChange={(url, publicId) => setFormData({ ...formData, imageUrl: url, imagePublicId: publicId })}
                 onImageRemove={() => setFormData({ ...formData, imageUrl: null, imagePublicId: null })}
               />
+
+              {/* Save to Library */}
+              {!editingProblem && (
+                <div className="p-4 rounded-lg bg-dark-700/50 border border-dark-600 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveToLibrary}
+                      onChange={(e) => setSaveToLibrary(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-sm font-medium">Also save to my question library</span>
+                  </label>
+                  {saveToLibrary && isAdmin && (
+                    <div className="flex items-center gap-4 ml-7">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="codingLibraryVisibility"
+                          checked={libraryIsPublic}
+                          onChange={() => setLibraryIsPublic(true)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-green-400">Public Library</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="codingLibraryVisibility"
+                          checked={!libraryIsPublic}
+                          onChange={() => setLibraryIsPublic(false)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-yellow-400">Private Library</span>
+                      </label>
+                    </div>
+                  )}
+                  {saveToLibrary && !isAdmin && (
+                    <p className="text-xs text-gray-500 ml-7">Will be saved to your private library</p>
+                  )}
+                </div>
+              )}
 
               {/* Submit */}
               <div className="flex justify-end gap-4 pt-4 border-t border-dark-700">

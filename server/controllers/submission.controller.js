@@ -239,32 +239,55 @@ export const submitCode = async (req, res) => {
         testcaseResults.push({
           testcaseId: testcase._id,
           passed,
+          verdict,
           executionTime: result.time ? parseFloat(result.time) * 1000 : 0,
           memoryUsed: result.memory || 0,
           error: result.stderr || result.compile_output || null
         });
 
-        // Break on first failure for hidden testcases (optional)
-        if (!passed && testcase.hidden) {
-          submission.verdict = verdict;
-          break;
-        }
+        // All testcases are always evaluated for partial scoring
       } catch (error) {
         console.error('Testcase execution error:', error);
         testcaseResults.push({
           testcaseId: testcase._id,
           passed: false,
-          error: 'Execution failed'
+          error: 'Execution failed',
+          isExecutionFailure: true
         });
       }
     }
 
-    // Calculate final verdict
+    // Check if ALL testcases failed due to execution errors (Judge0 down)
+    const executionFailures = testcaseResults.filter(r => r.isExecutionFailure);
+    if (executionFailures.length === testcaseResults.length && testcaseResults.length > 0) {
+      // All testcases failed to execute — Judge0 is likely down
+      // Save the submission with JUDGE0_UNAVAILABLE verdict for manual review (score = 0)
+      submission.verdict = 'JUDGE0_UNAVAILABLE';
+      submission.score = 0;
+      submission.testcasesPassed = 0;
+      submission.testcaseResults = testcaseResults;
+      submission.errorMessage = 'Judge0 service unavailable — code saved for manual review';
+      await submission.save();
+
+      return res.status(200).json({
+        success: true,
+        saved: true,
+        message: 'Code execution service unavailable. Your code has been saved and can be reviewed manually.',
+        submission: {
+          id: submission._id,
+          verdict: submission.verdict,
+          score: 0,
+          testcasesPassed: 0,
+          totalTestcases: submission.totalTestcases
+        }
+      });
+    }
+
+    // Calculate final verdict from the first failing testcase's actual verdict
     let finalVerdict = 'ACCEPTED';
     if (passedCount < problem.testcases.length) {
-      finalVerdict = testcaseResults[passedCount]?.error?.includes('time')
-        ? 'TIME_LIMIT_EXCEEDED'
-        : 'WRONG_ANSWER';
+      const firstFailure = testcaseResults.find(r => !r.passed && !r.isExecutionFailure);
+      finalVerdict = firstFailure?.verdict || 'WRONG_ANSWER';
     }
 
     // Update submission
@@ -274,10 +297,18 @@ export const submitCode = async (req, res) => {
     submission.testcaseResults = testcaseResults;
     await submission.save();
 
-    // Update problem stats
+    // Update problem stats (both legacy and metrics fields)
     problem.submissionCount++;
+    problem.metrics.attempted++;
     if (finalVerdict === 'ACCEPTED') {
       problem.acceptedCount++;
+      problem.metrics.accepted++;
+    } else if (finalVerdict === 'WRONG_ANSWER') {
+      problem.metrics.wrongAnswer++;
+    } else if (finalVerdict === 'TIME_LIMIT_EXCEEDED') {
+      problem.metrics.tle++;
+    } else if (finalVerdict === 'RUNTIME_ERROR') {
+      problem.metrics.runtimeError++;
     }
     await problem.save();
 
@@ -295,7 +326,7 @@ export const submitCode = async (req, res) => {
           result.codingSubmissions[problemIndex].bestSubmission = submission._id;
         }
         result.codingSubmissions[problemIndex].attempts++;
-        result.codingSubmissions[problemIndex].solved = finalVerdict === 'ACCEPTED';
+        result.codingSubmissions[problemIndex].solved = result.codingSubmissions[problemIndex].solved || (finalVerdict === 'ACCEPTED');
       } else {
         // Add new
         result.codingSubmissions.push({
@@ -381,8 +412,8 @@ export const getSubmissionById = async (req, res) => {
       });
     }
 
-    // Only owner or admin can view
-    if (submission.userId._id.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN') {
+    // Only owner, admin, or organiser can view
+    if (submission.userId._id.toString() !== req.user._id.toString() && req.user.role !== 'ADMIN' && req.user.role !== 'ORGANISER') {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to view this submission'
@@ -398,6 +429,122 @@ export const getSubmissionById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching submission'
+    });
+  }
+};
+
+// @desc    Get aggregated coding progress for a contest (accepted / total problems)
+// @route   GET /api/submissions/contest/:contestId/progress
+// @access  Private
+export const getCodingProgress = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+    const userId = req.user._id;
+
+    // Get total problem count
+    const problems = await CodingProblem.find({ contestId }).select('_id');
+    const total = problems.length;
+
+    // Get distinct problem IDs with at least one ACCEPTED submission
+    const acceptedProblemIds = await Submission.distinct('problemId', {
+      contestId,
+      userId,
+      verdict: 'ACCEPTED'
+    });
+
+    res.status(200).json({
+      success: true,
+      accepted: acceptedProblemIds.length,
+      total
+    });
+  } catch (error) {
+    console.error('Get coding progress error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching coding progress'
+    });
+  }
+};
+
+// @desc    Get coding review for a contest (user's submissions with problem details)
+// @route   GET /api/submissions/contest/:contestId/review
+// @access  Private
+export const getCodingReview = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+    const userId = req.user._id;
+
+    // Get all problems for this contest
+    const problems = await CodingProblem.find({ contestId })
+      .select('title difficulty marks order')
+      .sort({ order: 1 });
+
+    // Get all user submissions for this contest
+    const submissions = await Submission.find({ contestId, userId })
+      .select('problemId language verdict score submittedAt')
+      .sort({ submittedAt: -1 });
+
+    // Group submissions by problem
+    const review = problems.map(problem => {
+      const problemSubmissions = submissions.filter(
+        s => s.problemId.toString() === problem._id.toString()
+      );
+      const bestSubmission = problemSubmissions.find(s => s.verdict === 'ACCEPTED') || problemSubmissions[0] || null;
+
+      return {
+        problem: {
+          _id: problem._id,
+          title: problem.title,
+          difficulty: problem.difficulty,
+          marks: problem.marks
+        },
+        submissionCount: problemSubmissions.length,
+        bestVerdict: bestSubmission?.verdict || 'NOT_ATTEMPTED',
+        bestScore: bestSubmission?.score || 0,
+        language: bestSubmission?.language || null,
+        lastSubmittedAt: problemSubmissions[0]?.submittedAt || null
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      review
+    });
+  } catch (error) {
+    console.error('Get coding review error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching coding review'
+    });
+  }
+};
+
+// @desc    Get pending (JUDGE0_UNAVAILABLE) submissions for a contest
+// @route   GET /api/submissions/contest/:contestId/pending
+// @access  Private/Admin or Organiser
+export const getPendingSubmissions = async (req, res) => {
+  try {
+    const { contestId } = req.params;
+
+    const submissions = await Submission.find({
+      contestId,
+      verdict: 'JUDGE0_UNAVAILABLE'
+    })
+      .populate('userId', 'name email rollNumber')
+      .populate('problemId', 'title difficulty score')
+      .select('userId problemId sourceCode language languageId verdict errorMessage submittedAt')
+      .sort({ submittedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+  } catch (error) {
+    console.error('Get pending submissions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching pending submissions'
     });
   }
 };

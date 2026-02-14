@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/authService';
 import toast from 'react-hot-toast';
+import { useContestTimer } from '../../context/ContestTimerContext';
 import {
     ArrowLeft,
     ArrowRight,
     Send,
     ClipboardList,
     CheckCircle,
+    Clock,
     Loader2
 } from 'lucide-react';
 
 const FormSection = () => {
     const { contestId } = useParams();
     const navigate = useNavigate();
+    const { remainingTime, formattedTime } = useContestTimer();
 
     const [forms, setForms] = useState([]);
     const [currentFormIndex, setCurrentFormIndex] = useState(0);
@@ -123,9 +126,15 @@ const FormSection = () => {
             toast.success('Form submitted successfully!');
             setSubmittedForms(prev => [...prev, form._id]);
 
-            // Move to next form if available
+            // Move to next form if available, otherwise redirect to hub for final submission
             if (currentFormIndex < forms.length - 1) {
                 setCurrentFormIndex(prev => prev + 1);
+            } else {
+                // Last form submitted — redirect to Contest Hub for final submission
+                toast.success('All forms completed! Redirecting to final submission...', { duration: 2000 });
+                setTimeout(() => {
+                    navigate(`/contest/${contestId}/hub`);
+                }, 1500);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to submit form');
@@ -177,6 +186,10 @@ const FormSection = () => {
                         <ArrowLeft className="w-5 h-5" />
                         Back to Hub
                     </button>
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-lg font-bold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'}`}>
+                        <Clock className="w-5 h-5" />
+                        <span>{formattedTime}</span>
+                    </div>
                     <div className="text-right">
                         <span className="text-gray-400">Form {currentFormIndex + 1} of {forms.length}</span>
                     </div>

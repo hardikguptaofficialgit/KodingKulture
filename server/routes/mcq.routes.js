@@ -15,18 +15,18 @@ import {
   getContestMCQReview
 } from '../controllers/mcq.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
-import { adminOnly, adminOrOrganiser } from '../middlewares/admin.middleware.js';
+import { adminOnly, adminOrOrganiser, contestOwner } from '../middlewares/admin.middleware.js';
 
 const router = express.Router();
 
-// Library routes - Read+Create for Admin/Organiser, Update/Delete for Admin only
+// Library routes - Admin/Organiser can access, ownership enforced in controllers
 router.get('/library', protect, adminOrOrganiser, getLibraryMCQs);
 router.post('/library', protect, adminOrOrganiser, createLibraryMCQ);
-router.put('/library/:id', protect, adminOnly, updateLibraryMCQ);
-router.delete('/library/:id', protect, adminOnly, deleteLibraryMCQ);
+router.put('/library/:id', protect, adminOrOrganiser, updateLibraryMCQ);
+router.delete('/library/:id', protect, adminOrOrganiser, deleteLibraryMCQ);
 
-// Contest-library linking routes - Admin or Organiser
-router.post('/contest/:contestId/add-from-library', protect, adminOrOrganiser, addLibraryMCQsToContest);
+// Contest-library linking routes - Admin or Organiser (must own the contest)
+router.post('/contest/:contestId/add-from-library', protect, adminOrOrganiser, contestOwner, addLibraryMCQsToContest);
 router.delete('/contest/:contestId/mcq/:mcqId', protect, adminOrOrganiser, removeMCQFromContest);
 
 // Contest MCQ routes

@@ -3,6 +3,7 @@ import {
     register,
     login,
     getMe,
+    sseConnect,
     updateProfile,
     sendSignupOTP,
     verifySignupOTP,
@@ -12,12 +13,6 @@ import {
     googleAuth
 } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
-import {
-    authLimiter,
-    otpLimiter,
-    passwordResetLimiter,
-    createAccountLimiter
-} from '../middlewares/security.middleware.js';
 
 const router = express.Router();
 
@@ -48,6 +43,7 @@ router.post('/reset-password', resetPassword);
 // =============================================
 
 router.get('/me', protect, getMe);
+router.get('/sse', protect, sseConnect);
 router.put('/profile', protect, updateProfile);
 
 export default router;

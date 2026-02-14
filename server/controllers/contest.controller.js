@@ -4,6 +4,15 @@ import Violation from '../models/Violation.js';
 import ContestRegistration from '../models/ContestRegistration.js';
 import ContestProgress from '../models/ContestProgress.js';
 import Room from '../models/Room.js';
+import MCQ from '../models/MCQ.js';
+import MCQSubmission from '../models/MCQSubmission.js';
+import Submission from '../models/Submission.js';
+import CodingProblem from '../models/CodingProblem.js';
+import ContestMCQ from '../models/ContestMCQ.js';
+import ContestCodingProblem from '../models/ContestCodingProblem.js';
+import FormSubmission from '../models/FormSubmission.js';
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 // @desc    Get all contests
 // @route   GET /api/contests
@@ -138,8 +147,10 @@ export const updateContest = async (req, res) => {
     // If timing is being updated, recalculate status
     if (updateData.startTime || updateData.endTime) {
       const now = new Date();
-      const startTime = new Date(updateData.startTime || (await Contest.findById(req.params.id)).startTime);
-      const endTime = new Date(updateData.endTime || (await Contest.findById(req.params.id)).endTime);
+      const existingContest = (!updateData.startTime || !updateData.endTime)
+        ? await Contest.findById(req.params.id) : null;
+      const startTime = new Date(updateData.startTime || existingContest.startTime);
+      const endTime = new Date(updateData.endTime || existingContest.endTime);
 
       if (now < startTime) {
         updateData.status = 'UPCOMING';
@@ -191,9 +202,25 @@ export const deleteContest = async (req, res) => {
       });
     }
 
+    // Cascade delete all related data
+    const contestId = req.params.id;
+    await Promise.all([
+      Result.deleteMany({ contestId }),
+      ContestProgress.deleteMany({ contestId }),
+      ContestRegistration.deleteMany({ contestId }),
+      Submission.deleteMany({ contestId }),
+      MCQSubmission.deleteMany({ contestId }),
+      FormSubmission.deleteMany({ contestId }),
+      Violation.deleteMany({ contestId }),
+      MCQ.deleteMany({ contestId, isLibrary: { $ne: true } }),
+      CodingProblem.deleteMany({ contestId, isLibrary: { $ne: true } }),
+      ContestMCQ.deleteMany({ contestId }),
+      ContestCodingProblem.deleteMany({ contestId })
+    ]);
+
     res.status(200).json({
       success: true,
-      message: 'Contest deleted successfully'
+      message: 'Contest and all related data deleted successfully'
     });
   } catch (error) {
     console.error('Delete contest error:', error);
@@ -345,8 +372,7 @@ export const startContest = async (req, res) => {
       });
     }
 
-    // Import ContestProgress here to avoid circular dependency
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
+    // ContestProgress is now statically imported at the top of the file
 
     // Check if already started
     let progress = await ContestProgress.findOne({ contestId: id, userId });
@@ -392,7 +418,7 @@ export const getContestProgress = async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
+    // ContestProgress is statically imported at the top
     const contest = await Contest.findById(id);
 
     if (!contest) {
@@ -444,10 +470,7 @@ export const finalSubmitContest = async (req, res) => {
     const userId = req.user._id;
     const { mcqAnswers, codingSubmissions } = req.body;
 
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
-    const MCQSubmission = (await import('../models/MCQSubmission.js')).default;
-    const MCQ = (await import('../models/MCQ.js')).default;
-    const Submission = (await import('../models/Submission.js')).default;
+    // Models are statically imported at the top
 
     const progress = await ContestProgress.findOne({ contestId: id, userId });
 
@@ -516,6 +539,15 @@ export const finalSubmitContest = async (req, res) => {
             isCorrect,
             marksAwarded
           });
+
+          // Update MCQ metrics
+          mcq.metrics.attempted++;
+          if (isCorrect) {
+            mcq.metrics.correct++;
+          } else {
+            mcq.metrics.wrong++;
+          }
+          await mcq.save();
         }
       }
     }
@@ -671,7 +703,7 @@ export const saveProgress = async (req, res) => {
     const userId = req.user._id;
     const { mcqAnswers } = req.body;
 
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
+    // ContestProgress is statically imported at the top
 
     const progress = await ContestProgress.findOne({ contestId: id, userId });
 
@@ -722,8 +754,7 @@ export const emergencySave = async (req, res) => {
     }
 
     // Verify token manually
-    const jwt = (await import('jsonwebtoken')).default;
-    const User = (await import('../models/User.js')).default;
+    // jwt and User are statically imported at the top
 
     let decoded;
     try {
@@ -733,7 +764,7 @@ export const emergencySave = async (req, res) => {
     }
 
     const userId = decoded.id;
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
+    // ContestProgress is statically imported at the top
 
     const progress = await ContestProgress.findOne({ contestId: id, userId });
 
@@ -763,7 +794,7 @@ export const logViolation = async (req, res) => {
     const userId = req.user._id;
     const { type, details } = req.body;
 
-    const ContestProgress = (await import('../models/ContestProgress.js')).default;
+    // ContestProgress is statically imported at the top
 
     // Get current progress
     const progress = await ContestProgress.findOne({ contestId: id, userId });
@@ -795,8 +826,9 @@ export const logViolation = async (req, res) => {
       details
     });
 
-    // Check if max warnings reached (3 warnings = auto-submit)
-    const maxWarnings = 3;
+    // Check if max warnings reached (configurable per contest, default 3)
+    const contest = await Contest.findById(id);
+    const maxWarnings = contest?.maxWarnings || 3;
     let autoSubmit = false;
 
     if (warningNumber >= maxWarnings) {
@@ -985,9 +1017,19 @@ export const getAdminContests = async (req, res) => {
   try {
     let query = {};
 
-    // If organiser, only show their own contests
+    // If organiser, show their own contests AND contests from rooms where they are co-organiser
     if (req.user.role === 'ORGANISER') {
-      query.createdBy = req.user._id;
+      const coOrgRooms = await Room.find({ coOrganisers: req.user._id }).select('_id');
+      const coOrgRoomIds = coOrgRooms.map(r => r._id);
+
+      if (coOrgRoomIds.length > 0) {
+        query.$or = [
+          { createdBy: req.user._id },
+          { roomId: { $in: coOrgRoomIds } }
+        ];
+      } else {
+        query.createdBy = req.user._id;
+      }
     }
     // Admin sees all contests
 
@@ -1051,10 +1093,10 @@ export const endContestManually = async (req, res) => {
       });
     }
 
-    // Get all active participants (STARTED but not SUBMITTED)
+    // Get all active participants (IN_PROGRESS but not SUBMITTED)
     const activeParticipants = await ContestProgress.find({
       contestId,
-      status: 'STARTED'
+      status: 'IN_PROGRESS'
     }).populate('userId', 'name email');
 
     let autoSubmittedCount = 0;
@@ -1067,8 +1109,7 @@ export const endContestManually = async (req, res) => {
         const mcqAnswers = progress.mcqAnswers || [];
 
         // Get MCQs for this contest to calculate scores
-        const MCQ = (await import('../models/MCQ.js')).default;
-        const ContestMCQ = (await import('../models/ContestMCQ.js')).default;
+        // MCQ and ContestMCQ are statically imported at the top
 
         // Direct MCQs
         const directMCQs = await MCQ.find({ contestId });
@@ -1086,7 +1127,9 @@ export const endContestManually = async (req, res) => {
         for (const answer of mcqAnswers) {
           const mcq = allMCQs.find(m => m._id.toString() === answer.mcqId.toString());
           if (mcq) {
-            const correctAnswers = mcq.correctAnswers || [];
+            const correctAnswers = mcq.options
+              .map((opt, idx) => opt.isCorrect ? idx : -1)
+              .filter(idx => idx !== -1);
             const userAnswers = answer.selectedOptions || [];
 
             const isCorrect =
@@ -1096,13 +1139,21 @@ export const endContestManually = async (req, res) => {
             if (isCorrect) {
               mcqScore += mcq.marks || 0;
             }
+
+            // Update MCQ metrics
+            mcq.metrics = mcq.metrics || { attempted: 0, correct: 0, wrong: 0 };
+            mcq.metrics.attempted++;
+            if (isCorrect) {
+              mcq.metrics.correct++;
+            } else {
+              mcq.metrics.wrong++;
+            }
+            await mcq.save();
           }
         }
 
         // Calculate coding score from existing submissions
-        const CodingSubmission = (await import('../models/CodingSubmission.js')).default;
-        const CodingProblem = (await import('../models/CodingProblem.js')).default;
-        const ContestCodingProblem = (await import('../models/ContestCodingProblem.js')).default;
+        // Submission, CodingProblem, ContestCodingProblem are statically imported at the top
 
         const directProblems = await CodingProblem.find({ contestId });
         const contestProblemLinks = await ContestCodingProblem.find({ contestId }).populate('problemId');
@@ -1115,7 +1166,7 @@ export const endContestManually = async (req, res) => {
         let codingScore = 0;
 
         for (const problem of allProblems) {
-          const bestSubmission = await CodingSubmission.findOne({
+          const bestSubmission = await Submission.findOne({
             problemId: problem._id,
             contestId,
             userId: progress.userId._id,

@@ -39,29 +39,11 @@ const ContestHub = () => {
                     total: mcqData.mcqs?.length || 0
                 });
 
-                // Coding progress - get problems and check for ACCEPTED submissions
-                const codingData = await codingService.getCodingProblemsByContest(contestId);
-                const problems = codingData.problems || [];
-
-                // Count problems with at least one ACCEPTED submission
-                let acceptedCount = 0;
-                for (const problem of problems) {
-                    try {
-                        const data = await codingService.getSubmissions(problem._id, contestId);
-                        const submissions = data.submissions || [];
-                        // Only count if there's at least one ACCEPTED submission
-                        const hasAccepted = submissions.some(s => s.verdict === 'ACCEPTED');
-                        if (hasAccepted) {
-                            acceptedCount++;
-                        }
-                    } catch (e) {
-                        // No submissions for this problem
-                    }
-                }
-
+                // Coding progress - single aggregated API call instead of N+1
+                const progressData = await codingService.getCodingProgress(contestId);
                 setCodingProgress({
-                    submitted: acceptedCount,
-                    total: problems.length
+                    submitted: progressData.accepted || 0,
+                    total: progressData.total || 0
                 });
             } catch (error) {
                 console.error('Error fetching progress:', error);

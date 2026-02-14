@@ -56,21 +56,47 @@ export const submitToJudge0 = async (sourceCode, languageId, input, expectedOutp
 // @desc    Batch submit to Judge0
 export const batchSubmitToJudge0 = async (submissions) => {
   try {
-    const response = await judge0Client.post('/submissions/batch', {
-      submissions
+    const response = await judge0Client.post('/submissions/batch?base64_encoded=true', {
+      submissions: submissions.map(s => ({
+        ...s,
+        source_code: toBase64(s.source_code),
+        stdin: toBase64(s.stdin),
+        expected_output: toBase64(s.expected_output)
+      }))
     });
 
     const tokens = response.data.map(s => s.token);
 
-    // Poll for results
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+    // Poll for results (mirrors submitToJudge0 pattern)
+    let results;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    const results = await Promise.all(
-      tokens.map(token =>
-        judge0Client.get(`/submissions/${token}`)
-          .then(res => res.data)
-      )
-    );
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      results = await Promise.all(
+        tokens.map(token =>
+          judge0Client.get(`/submissions/${token}?base64_encoded=true`)
+            .then(res => res.data)
+        )
+      );
+
+      // Check if all submissions are done (status > 2 means completed)
+      if (results.every(r => r.status.id > 2)) {
+        break;
+      }
+
+      attempts++;
+    }
+
+    // Decode base64 fields in results
+    for (const result of results) {
+      if (result.stdout) result.stdout = fromBase64(result.stdout);
+      if (result.stderr) result.stderr = fromBase64(result.stderr);
+      if (result.compile_output) result.compile_output = fromBase64(result.compile_output);
+      if (result.message) result.message = fromBase64(result.message);
+    }
 
     return results;
   } catch (error) {

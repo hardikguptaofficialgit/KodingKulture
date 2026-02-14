@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/authService';
+import codingService from '../../services/codingService';
 import toast from 'react-hot-toast';
 import {
     ArrowLeft,
@@ -14,7 +15,8 @@ import {
     ChevronRight,
     ClipboardList,
     Clock,
-    Mail
+    Mail,
+    Code
 } from 'lucide-react';
 
 const ContestReview = () => {
@@ -31,6 +33,7 @@ const ContestReview = () => {
 
     // Forms state
     const [formSubmissions, setFormSubmissions] = useState([]);
+    const [codingReview, setCodingReview] = useState([]);
 
     useEffect(() => {
         fetchReviewData();
@@ -38,17 +41,19 @@ const ContestReview = () => {
 
     const fetchReviewData = async () => {
         try {
-            const [mcqRes, resultRes, contestRes, formsRes] = await Promise.all([
+            const [mcqRes, resultRes, contestRes, formsRes, codingRes] = await Promise.all([
                 api.get(`/mcq/contest/${contestId}/review`).catch(() => ({ data: { review: [] } })),
                 api.get(`/leaderboard/${contestId}/rank`).catch(() => ({ data: { result: null } })),
                 api.get(`/contests/${contestId}`).catch(() => ({ data: { contest: null } })),
-                api.get(`/form-submissions/my/${contestId}`).catch(() => ({ data: { submissions: [] } }))
+                api.get(`/form-submissions/my/${contestId}`).catch(() => ({ data: { submissions: [] } })),
+                codingService.getCodingReview(contestId).catch(() => ({ review: [] }))
             ]);
 
             setMcqReview(mcqRes.data.review || []);
             setResult(resultRes.data.result);
             setContest(contestRes.data.contest);
             setFormSubmissions(formsRes.data.submissions || []);
+            setCodingReview(codingRes.review || []);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching review:', error);
@@ -67,6 +72,7 @@ const ContestReview = () => {
 
     const hasMCQ = contest?.sections?.mcq?.enabled && mcqReview.length > 0;
     const hasForms = contest?.sections?.forms?.enabled && formSubmissions.length > 0;
+    const hasCoding = contest?.sections?.coding?.enabled && codingReview.length > 0;
 
     // MCQ calculations
     const currentMCQ = mcqReview[currentQuestion];
@@ -97,7 +103,7 @@ const ContestReview = () => {
                 </div>
 
                 {/* Section Toggle Tabs */}
-                {(hasMCQ || hasForms) && (
+                {(hasMCQ || hasForms || hasCoding) && (
                     <div className="flex gap-2 mb-8">
                         {hasMCQ && (
                             <button
@@ -121,6 +127,18 @@ const ContestReview = () => {
                             >
                                 <ClipboardList className="w-5 h-5" />
                                 Forms Section
+                            </button>
+                        )}
+                        {hasCoding && (
+                            <button
+                                onClick={() => setActiveTab('coding')}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${activeTab === 'coding'
+                                    ? 'bg-orange-500 text-white'
+                                    : 'bg-dark-700 text-gray-400 hover:bg-dark-600'
+                                    }`}
+                            >
+                                <Code className="w-5 h-5" />
+                                Coding Section
                             </button>
                         )}
                     </div>
@@ -231,6 +249,14 @@ const ContestReview = () => {
                                     );
                                 })}
                             </div>
+
+                            {/* Explanation */}
+                            {currentMCQ.explanation && (
+                                <div className="mt-4 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5">
+                                    <p className="text-sm font-semibold text-blue-400 mb-1">💡 Explanation</p>
+                                    <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{currentMCQ.explanation}</p>
+                                </div>
+                            )}
 
                             {/* Navigation */}
                             <div className="flex justify-between items-center mt-8 pt-6 border-t border-dark-700">
@@ -380,8 +406,82 @@ const ContestReview = () => {
                     </div>
                 )}
 
+                {/* Coding Section Content */}
+                {activeTab === 'coding' && hasCoding && (
+                    <div className="space-y-4">
+                        {/* Coding Score Summary */}
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                            <div className="card bg-dark-800/50 text-center p-4">
+                                <p className="text-2xl font-bold text-orange-400">{result?.codingScore || 0}</p>
+                                <p className="text-sm text-gray-400">Coding Score</p>
+                            </div>
+                            <div className="card bg-green-500/10 text-center p-4">
+                                <p className="text-2xl font-bold text-green-500">
+                                    {codingReview.filter(r => r.bestVerdict === 'ACCEPTED').length}
+                                </p>
+                                <p className="text-sm text-gray-400">Accepted</p>
+                            </div>
+                            <div className="card bg-dark-800/50 text-center p-4">
+                                <p className="text-2xl font-bold text-gray-300">{codingReview.length}</p>
+                                <p className="text-sm text-gray-400">Total Problems</p>
+                            </div>
+                        </div>
+
+                        {/* Problem List */}
+                        {codingReview.map((item) => {
+                            const verdictColors = {
+                                'ACCEPTED': 'text-green-400 bg-green-500/10',
+                                'WRONG_ANSWER': 'text-red-400 bg-red-500/10',
+                                'TIME_LIMIT_EXCEEDED': 'text-yellow-400 bg-yellow-500/10',
+                                'RUNTIME_ERROR': 'text-orange-400 bg-orange-500/10',
+                                'COMPILATION_ERROR': 'text-purple-400 bg-purple-500/10',
+                                'NOT_ATTEMPTED': 'text-gray-400 bg-dark-700'
+                            };
+                            const colorClass = verdictColors[item.bestVerdict] || 'text-gray-400 bg-dark-700';
+                            const verdictLabel = item.bestVerdict.replace(/_/g, ' ');
+
+                            return (
+                                <div key={item.problem._id} className="card bg-dark-800/50 p-5">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">{item.problem.title}</h3>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className={`text-sm ${item.problem.difficulty === 'EASY' ? 'text-green-400' :
+                                                    item.problem.difficulty === 'MEDIUM' ? 'text-yellow-400' : 'text-red-400'
+                                                    }`}>{item.problem.difficulty}</span>
+                                                <span className="text-gray-500">•</span>
+                                                <span className="text-sm text-gray-400">{item.problem.marks} marks</span>
+                                                {item.language && (
+                                                    <>
+                                                        <span className="text-gray-500">•</span>
+                                                        <span className="text-sm text-gray-400">{item.language}</span>
+                                                    </>
+                                                )}
+                                                {item.submissionCount > 0 && (
+                                                    <>
+                                                        <span className="text-gray-500">•</span>
+                                                        <span className="text-sm text-gray-400">{item.submissionCount} submission{item.submissionCount !== 1 ? 's' : ''}</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {item.bestVerdict === 'ACCEPTED' && (
+                                                <span className="text-sm font-medium text-green-400">{item.bestScore} pts</span>
+                                            )}
+                                            <span className={`px-3 py-1 rounded-lg text-sm font-medium ${colorClass}`}>
+                                                {verdictLabel}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
                 {/* No Data Message */}
-                {!hasMCQ && !hasForms && (
+                {!hasMCQ && !hasForms && !hasCoding && (
                     <div className="card text-center py-12">
                         <FileText className="w-12 h-12 text-gray-500 mx-auto mb-4" />
                         <h2 className="text-xl font-bold mb-2">No Review Data</h2>

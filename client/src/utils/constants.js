@@ -21,7 +21,9 @@ export const LANGUAGES = [
   { value: 'cpp', label: 'C++', id: 54 },
   { value: 'java', label: 'Java', id: 62 },
   { value: 'python', label: 'Python', id: 71 },
-  { value: 'javascript', label: 'JavaScript', id: 63 }
+  { value: 'javascript', label: 'JavaScript', id: 63 },
+  { value: 'go', label: 'Go', id: 60 },
+  { value: 'rust', label: 'Rust', id: 73 }
 ];
 
 export const DIFFICULTY_COLORS = {
@@ -35,8 +37,10 @@ export const DEFAULT_CODE = {
   cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}',
   java: 'public class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}',
   python: '# Your code here\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()',
-  javascript: '// Your code here\n\nfunction main() {\n    \n}\n\nmain();'
+  javascript: '// Your code here\n\nfunction main() {\n    \n}\n\nmain();',
+  go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Your code here\n}',
+  rust: 'fn main() {\n    // Your code here\n}'
 };
 
-// Google OAuth Client ID
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '11805022042-e14oogg7ujmehlilleh5if8ijf6ue3qm.apps.googleusercontent.com';
+// Google OAuth Client ID — must be set via VITE_GOOGLE_CLIENT_ID env variable
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';

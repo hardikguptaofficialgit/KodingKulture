@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Contest from '../models/Contest.js';
 import { sendMail } from '../services/emailService.js';
+import { sendToUser } from '../services/sseManager.js';
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -84,6 +85,14 @@ export const updateUserRole = async (req, res) => {
         const oldRole = user.role;
         user.role = role;
         await user.save();
+
+        // Push real-time role update via SSE (instant for online users)
+        sendToUser(user._id, 'role-update', {
+            role: user.role,
+            previousRole: oldRole,
+            name: user.name,
+            email: user.email
+        });
 
         // Send email notification
         try {

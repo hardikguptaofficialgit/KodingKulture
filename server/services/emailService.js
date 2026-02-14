@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import crypto from 'crypto';
 
 // Lazy initialization - only create client when needed
 let resend = null;
@@ -18,14 +19,9 @@ export const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Generate reset token
+// Generate reset token (cryptographically secure)
 export const generateResetToken = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  return crypto.randomBytes(32).toString('hex');
 };
 
 // Send OTP email
@@ -170,6 +166,69 @@ export const sendMail = async ({ to, subject, html }) => {
     }
 
     console.log('Email sent successfully:', data?.id);
+    return { success: true, messageId: data?.id };
+  } catch (error) {
+    console.error('Email service error:', error);
+    throw error;
+  }
+};
+
+// Send co-organiser invite email
+export const sendCoOrganiserInviteEmail = async (email, roomName, inviterName, acceptUrl) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f1f5f9; padding: 40px; }
+        .container { max-width: 500px; margin: 0 auto; background: #1e293b; border-radius: 16px; padding: 40px; border: 1px solid #334155; }
+        .logo { text-align: center; font-size: 28px; font-weight: bold; color: #FF6B35; margin-bottom: 30px; }
+        .message { color: #94a3b8; line-height: 1.6; text-align: center; }
+        .room-name { color: #FF6B35; font-weight: bold; font-size: 20px; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%); color: white; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px; }
+        .btn-decline { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
+        .btn-container { text-align: center; margin: 30px 0; }
+        .warning { color: #fbbf24; font-size: 13px; margin-top: 20px; text-align: center; }
+        .footer { text-align: center; color: #64748b; font-size: 12px; margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="logo">🚀 FAKT CHECK</div>
+        <p class="message">
+          <strong>${inviterName}</strong> has invited you to become a <strong>Co-Organiser</strong> of the room:
+        </p>
+        <p class="message room-name">${roomName}</p>
+        <p class="message">
+          As a co-organiser, you'll be able to manage contests, evaluate form submissions, and post announcements in this room.
+        </p>
+        <div class="btn-container">
+          <a href="${acceptUrl}" class="btn">Accept Invitation</a>
+        </div>
+        <p class="warning">⚠️ This invitation expires in 48 hours.</p>
+        <div class="footer">
+          If you didn't expect this invitation, you can safely ignore this email.<br>
+          © 2026 FAKT CHECK. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const { data, error } = await getResendClient().emails.send({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: `You're invited to co-organise "${roomName}" on FAKT CHECK`,
+      html
+    });
+
+    if (error) {
+      console.error('Email send error:', error);
+      throw new Error(error.message);
+    }
+
+    console.log('Co-organiser invite email sent:', data?.id);
     return { success: true, messageId: data?.id };
   } catch (error) {
     console.error('Email service error:', error);

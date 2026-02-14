@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import OTP from '../models/OTP.js';
 import { generateToken } from '../utils/generateToken.js';
 import { generateOTP, generateResetToken, sendOTPEmail, sendPasswordResetEmail } from '../services/emailService.js';
+import { addConnection } from '../services/sseManager.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -140,6 +141,52 @@ export const getMe = async (req, res) => {
       success: false,
       message: 'Server error fetching profile'
     });
+  }
+};
+
+// @desc    SSE endpoint for real-time role/user updates
+// @route   GET /api/auth/sse
+// @access  Private
+export const sseConnect = async (req, res) => {
+  try {
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no' // Disable Nginx buffering
+    });
+
+    // Send current role immediately on connect (handles offline→online sync)
+    const freshUser = await User.findById(req.user._id).select('role name email');
+    if (freshUser) {
+      res.write(`event: role-sync\ndata: ${JSON.stringify({
+        role: freshUser.role,
+        name: freshUser.name,
+        email: freshUser.email
+      })}\n\n`);
+    }
+
+    // Register this connection for future pushes
+    addConnection(req.user._id, res);
+
+    // Heartbeat every 30 seconds to keep connection alive through proxies/load balancers
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+      } catch (e) {
+        clearInterval(heartbeat);
+      }
+    }, 30000);
+
+    // Clean up heartbeat on disconnect
+    req.on('close', () => {
+      clearInterval(heartbeat);
+    });
+  } catch (error) {
+    console.error('SSE connect error:', error);
+    res.status(500).end();
   }
 };
 

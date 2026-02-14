@@ -67,8 +67,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-userSchema.index({ email: 1 });
+// Index for faster queries (email index already created by unique: true)
 userSchema.index({ role: 1 });
 
 const User = mongoose.model('User', userSchema);

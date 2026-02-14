@@ -3,6 +3,18 @@ import ContestMCQ from '../models/ContestMCQ.js';
 import Result from '../models/Result.js';
 import Contest from '../models/Contest.js';
 
+// ES2025 RegExp.escape with fallback for older runtimes
+const escapeRegExp = (str) =>
+  typeof RegExp.escape === 'function'
+    ? RegExp.escape(str)
+    : str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Whitelisted fields for library MCQ updates
+const MCQ_UPDATABLE_FIELDS = [
+  'question', 'options', 'correctAnswers', 'category', 'difficulty',
+  'marks', 'negativeMarks', 'explanation', 'tags', 'imageUrl', 'imagePublicId'
+];
+
 // ============ LIBRARY ENDPOINTS ============
 
 // @desc    Get all library MCQs
@@ -29,13 +41,18 @@ export const getLibraryMCQs = async (req, res) => {
     if (category) filter.category = category;
     if (difficulty) filter.difficulty = difficulty;
     if (search) {
-      const searchFilter = {
-        $or: [
-          { question: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
+      const escaped = escapeRegExp(search);
+      filter = {
+        $and: [
+          filter,
+          {
+            $or: [
+              { question: { $regex: escaped, $options: 'i' } },
+              { tags: { $in: [new RegExp(escaped, 'i')] } }
+            ]
+          }
         ]
       };
-      filter = { ...filter, ...searchFilter };
     }
 
     const mcqs = await MCQ.find(filter).sort({ createdAt: -1 });
@@ -88,14 +105,10 @@ export const createLibraryMCQ = async (req, res) => {
 
 // @desc    Update library MCQ
 // @route   PUT /api/mcq/library/:id
-// @access  Private/Admin
+// @access  Private/Admin or Organiser (own private only)
 export const updateLibraryMCQ = async (req, res) => {
   try {
-    const mcq = await MCQ.findOneAndUpdate(
-      { _id: req.params.id, isLibrary: true },
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const mcq = await MCQ.findOne({ _id: req.params.id, isLibrary: true });
 
     if (!mcq) {
       return res.status(404).json({
@@ -103,6 +116,27 @@ export const updateLibraryMCQ = async (req, res) => {
         message: 'Library MCQ not found'
       });
     }
+
+    // Ownership check: organisers can only edit their own private questions
+    if (req.user.role === 'ORGANISER') {
+      if (mcq.createdBy?.toString() !== req.user._id.toString() || mcq.isPublic) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only edit your own private questions'
+        });
+      }
+      // Prevent organiser from making their question public
+      delete req.body.isPublic;
+    }
+
+    // Whitelist updatable fields to prevent mass-assignment
+    const allowed = req.user.role === 'ADMIN'
+      ? [...MCQ_UPDATABLE_FIELDS, 'isPublic']
+      : MCQ_UPDATABLE_FIELDS;
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) mcq[key] = req.body[key];
+    }
+    await mcq.save();
 
     res.status(200).json({
       success: true,
@@ -120,10 +154,10 @@ export const updateLibraryMCQ = async (req, res) => {
 
 // @desc    Delete library MCQ
 // @route   DELETE /api/mcq/library/:id
-// @access  Private/Admin
+// @access  Private/Admin or Organiser (own private only)
 export const deleteLibraryMCQ = async (req, res) => {
   try {
-    const mcq = await MCQ.findOneAndDelete({ _id: req.params.id, isLibrary: true });
+    const mcq = await MCQ.findOne({ _id: req.params.id, isLibrary: true });
 
     if (!mcq) {
       return res.status(404).json({
@@ -131,6 +165,18 @@ export const deleteLibraryMCQ = async (req, res) => {
         message: 'Library MCQ not found'
       });
     }
+
+    // Ownership check: organisers can only delete their own private questions
+    if (req.user.role === 'ORGANISER') {
+      if (mcq.createdBy?.toString() !== req.user._id.toString() || mcq.isPublic) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete your own private questions'
+        });
+      }
+    }
+
+    await MCQ.findByIdAndDelete(req.params.id);
 
     // Also remove from all contests
     await ContestMCQ.deleteMany({ mcqId: req.params.id });
@@ -170,7 +216,12 @@ export const addLibraryMCQsToContest = async (req, res) => {
 
     const addedMCQs = [];
     for (const mcqId of mcqIds) {
-      const mcq = await MCQ.findOne({ _id: mcqId, isLibrary: true });
+      // Verify the requesting user can actually see this MCQ
+      let mcqFilter = { _id: mcqId, isLibrary: true };
+      if (req.user.role === 'ORGANISER') {
+        mcqFilter.$or = [{ isPublic: true }, { createdBy: req.user._id }];
+      }
+      const mcq = await MCQ.findOne(mcqFilter);
       if (!mcq) continue;
 
       // Check if already added
@@ -297,7 +348,19 @@ export const getMCQsByContest = async (req, res) => {
 
     // Contest info already fetched above
 
-    const allMCQs = [...directMCQs, ...libraryMCQs].sort((a, b) => a.order - b.order);
+    let allMCQs = [...directMCQs, ...libraryMCQs].sort((a, b) => a.order - b.order);
+
+    // Strip isCorrect from options for non-admin users to prevent cheating
+    // Add questionType field so frontend knows if it's single or multiple answer
+    if (!isAdminOrCreator) {
+      allMCQs = allMCQs.map(mcq => {
+        const obj = mcq.toObject ? mcq.toObject() : { ...mcq };
+        const correctCount = obj.options.filter(o => o.isCorrect).length;
+        obj.questionType = correctCount > 1 ? 'MULTIPLE' : 'SINGLE';
+        obj.options = obj.options.map(({ isCorrect, ...rest }) => rest);
+        return obj;
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -329,8 +392,12 @@ export const submitMCQAnswers = async (req, res) => {
 
       if (!mcq) continue;
 
-      const isCorrect = JSON.stringify(answer.selectedOptions.sort()) ===
-        JSON.stringify(mcq.correctAnswers.sort());
+      // Derive correct answers from options.isCorrect (canonical source of truth)
+      const correctAnswers = mcq.options
+        .map((opt, idx) => opt.isCorrect ? idx : -1)
+        .filter(idx => idx !== -1);
+      const isCorrect = answer.selectedOptions.length === correctAnswers.length &&
+        answer.selectedOptions.every(a => correctAnswers.includes(a));
 
       let marksAwarded = 0;
       if (isCorrect) {
@@ -398,12 +465,14 @@ export const submitMCQAnswers = async (req, res) => {
   }
 };
 
-// @desc    Create MCQ (Admin) - for direct contest MCQs
+// @desc    Create MCQ (Admin/Organiser) - for direct contest MCQs
 // @route   POST /api/mcq
-// @access  Private/Admin
+// @access  Private/Admin or Organiser
 export const createMCQ = async (req, res) => {
   try {
-    const mcq = await MCQ.create(req.body);
+    const { saveToLibrary, libraryIsPublic, ...mcqBody } = req.body;
+
+    const mcq = await MCQ.create({ ...mcqBody, createdBy: req.user._id });
 
     // Update contest total marks if linked to a contest
     if (mcq.contestId) {
@@ -414,10 +483,28 @@ export const createMCQ = async (req, res) => {
       }
     }
 
+    // Optionally save a copy to the library
+    let libraryMcq = null;
+    if (saveToLibrary) {
+      const libData = { ...mcqBody };
+      delete libData.contestId;
+      delete libData.order;
+      libraryMcq = await MCQ.create({
+        ...libData,
+        isLibrary: true,
+        contestId: null,
+        createdBy: req.user._id,
+        isPublic: req.user.role === 'ADMIN' ? (libraryIsPublic !== false) : false
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: 'MCQ created successfully',
-      mcq
+      message: saveToLibrary
+        ? 'MCQ created and saved to library'
+        : 'MCQ created successfully',
+      mcq,
+      libraryMcq
     });
   } catch (error) {
     console.error('Create MCQ error:', error);

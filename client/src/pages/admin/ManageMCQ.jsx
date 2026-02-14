@@ -20,6 +20,8 @@ const ManageMCQ = () => {
   const [showForm, setShowForm] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [editingMcq, setEditingMcq] = useState(null);
+  const [saveToLibrary, setSaveToLibrary] = useState(false);
+  const [libraryIsPublic, setLibraryIsPublic] = useState(true);
 
   // Library state
   const [libraryMcqs, setLibraryMcqs] = useState([]);
@@ -134,6 +136,8 @@ const ManageMCQ = () => {
       imagePublicId: null
     });
     setEditingMcq(null);
+    setSaveToLibrary(false);
+    setLibraryIsPublic(true);
     setShowForm(false);
   };
 
@@ -227,7 +231,11 @@ const ManageMCQ = () => {
         ...formData,
         options: formData.options.filter(opt => opt.text.trim()),
         imageUrl: formData.imageUrl,
-        imagePublicId: formData.imagePublicId
+        imagePublicId: formData.imagePublicId,
+        ...((!editingMcq && saveToLibrary) ? {
+          saveToLibrary: true,
+          libraryIsPublic: isAdmin ? libraryIsPublic : false
+        } : {})
       };
 
       if (editingMcq) {
@@ -235,7 +243,7 @@ const ManageMCQ = () => {
         toast.success('MCQ updated successfully');
       } else {
         await adminService.createMCQ(mcqData);
-        toast.success('MCQ created successfully');
+        toast.success(saveToLibrary ? 'MCQ created & saved to library' : 'MCQ created successfully');
       }
 
       resetForm();
@@ -439,6 +447,48 @@ const ManageMCQ = () => {
                 onImageChange={(url, publicId) => setFormData({ ...formData, imageUrl: url, imagePublicId: publicId })}
                 onImageRemove={() => setFormData({ ...formData, imageUrl: null, imagePublicId: null })}
               />
+
+              {/* Save to Library */}
+              {!editingMcq && (
+                <div className="p-4 rounded-lg bg-dark-700/50 border border-dark-600 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveToLibrary}
+                      onChange={(e) => setSaveToLibrary(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-sm font-medium">Also save to my question library</span>
+                  </label>
+                  {saveToLibrary && isAdmin && (
+                    <div className="flex items-center gap-4 ml-7">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="libraryVisibility"
+                          checked={libraryIsPublic}
+                          onChange={() => setLibraryIsPublic(true)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-green-400">Public Library</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="libraryVisibility"
+                          checked={!libraryIsPublic}
+                          onChange={() => setLibraryIsPublic(false)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-yellow-400">Private Library</span>
+                      </label>
+                    </div>
+                  )}
+                  {saveToLibrary && !isAdmin && (
+                    <p className="text-xs text-gray-500 ml-7">Will be saved to your private library</p>
+                  )}
+                </div>
+              )}
 
               {/* Submit */}
               <div className="flex justify-end gap-4 pt-4 border-t border-dark-700">

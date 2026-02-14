@@ -145,16 +145,6 @@ const ContestDetails = () => {
   const isLive = contest.status === 'LIVE';
   const isEnded = contest.status === 'ENDED';
 
-  // Debug logging
-  console.log('Registration Debug:', {
-    registrationStatus,
-    isRegistered,
-    hasStarted,
-    isAuthenticated,
-    isLive,
-    isEnded,
-    contestStatus: contest.status
-  });
 
   return (
     <div className="min-h-screen bg-dark-950 py-8">
@@ -211,7 +201,7 @@ const ContestDetails = () => {
               <div>
                 <div className="text-sm text-gray-400">Total Marks</div>
                 <div className="text-white font-semibold">
-                  {(contest.sections.mcq?.totalMarks || 0) + (contest.sections.coding?.totalMarks || 0)} points
+                  {(contest.sections.mcq?.totalMarks || 0) + (contest.sections.coding?.totalMarks || 0) + (contest.sections.forms?.totalMarks || 0)} points
                 </div>
               </div>
             </div>

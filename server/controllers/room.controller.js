@@ -1,6 +1,8 @@
 import Room from '../models/Room.js';
 import User from '../models/User.js';
 import Contest from '../models/Contest.js';
+import crypto from 'crypto';
+import { sendCoOrganiserInviteEmail } from '../services/emailService.js';
 
 // @desc    Create a new room
 // @route   POST /api/rooms
@@ -49,12 +51,13 @@ export const getRooms = async (req, res) => {
             // Admin sees all rooms
             query = Room.find({ isActive: true });
         } else if (req.user.role === 'ORGANISER') {
-            // Organiser sees rooms they own or co-organise
+            // Organiser sees rooms they own, co-organise, OR joined as participant
             query = Room.find({
                 isActive: true,
                 $or: [
                     { owner: req.user._id },
-                    { coOrganisers: req.user._id }
+                    { coOrganisers: req.user._id },
+                    { participants: req.user._id }
                 ]
             });
         } else {
@@ -233,7 +236,7 @@ export const joinRoomByLink = async (req, res) => {
     }
 };
 
-// @desc    Invite co-organiser
+// @desc    Invite co-organiser (sends email, does NOT directly add)
 // @route   POST /api/rooms/:id/invite
 // @access  Private (Room owner only)
 export const inviteCoOrganiser = async (req, res) => {
@@ -256,7 +259,7 @@ export const inviteCoOrganiser = async (req, res) => {
             });
         }
 
-        // Find user by email first
+        // Find user by email
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -274,26 +277,150 @@ export const inviteCoOrganiser = async (req, res) => {
             });
         }
 
-        // Check if already a member
-        if (room.isMember(user._id)) {
+        // Check if already a co-organiser
+        if (room.isCoOrganiser(user._id)) {
             return res.status(400).json({
                 success: false,
-                message: 'User is already a member of this room'
+                message: 'User is already a co-organiser of this room'
             });
         }
 
-        room.coOrganisers.push(user._id);
+        // Check if already the owner
+        if (room.isOwner(user._id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot invite the room owner as co-organiser'
+            });
+        }
+
+        // Check for existing pending invite
+        const existingInvite = room.pendingInvites.find(
+            inv => inv.email === email && inv.expiresAt > new Date()
+        );
+        if (existingInvite) {
+            return res.status(400).json({
+                success: false,
+                message: 'An invite has already been sent to this user. Please wait for them to accept or for the invite to expire.'
+            });
+        }
+
+        // Generate invite token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+        // Remove all expired invites AND any existing invites for this email (new one will be added)
+        room.pendingInvites = room.pendingInvites.filter(
+            inv => inv.expiresAt > new Date() && inv.email !== email
+        );
+
+        // Add pending invite
+        room.pendingInvites.push({
+            email,
+            token,
+            invitedBy: req.user._id,
+            expiresAt
+        });
         await room.save();
+
+        // Send invite email
+        const acceptUrl = `${process.env.CLIENT_URL}/rooms/accept-invite/${token}`;
+        await sendCoOrganiserInviteEmail(email, room.name, req.user.name, acceptUrl);
 
         res.status(200).json({
             success: true,
-            message: `${user.name} added as co-organiser`
+            message: `Invitation sent to ${user.name} (${email}). They must accept via email to become co-organiser.`
         });
     } catch (error) {
         console.error('Invite co-organiser error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to invite co-organiser'
+            message: 'Failed to send co-organiser invitation'
+        });
+    }
+};
+
+// @desc    Accept co-organiser invite via token
+// @route   POST /api/rooms/accept-invite/:token
+// @access  Private (authenticated user)
+export const acceptCoOrganiserInvite = async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        // Find room with this pending invite token
+        const room = await Room.findOne({
+            'pendingInvites.token': token
+        });
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invalid or expired invitation link'
+            });
+        }
+
+        // Find the specific invite
+        const invite = room.pendingInvites.find(inv => inv.token === token);
+
+        if (!invite) {
+            return res.status(404).json({
+                success: false,
+                message: 'Invitation not found'
+            });
+        }
+
+        // Check expiry
+        if (invite.expiresAt < new Date()) {
+            // Remove expired invite
+            room.pendingInvites = room.pendingInvites.filter(inv => inv.token !== token);
+            await room.save();
+            return res.status(400).json({
+                success: false,
+                message: 'This invitation has expired. Please ask the room owner to send a new one.'
+            });
+        }
+
+        // Verify the logged-in user matches the invite email
+        if (req.user.email !== invite.email) {
+            return res.status(403).json({
+                success: false,
+                message: 'This invitation was sent to a different email address. Please log in with the correct account.'
+            });
+        }
+
+        // Check if already a co-organiser (e.g., accepted via another invite)
+        if (room.isCoOrganiser(req.user._id)) {
+            room.pendingInvites = room.pendingInvites.filter(inv => inv.token !== token);
+            await room.save();
+            return res.status(200).json({
+                success: true,
+                message: 'You are already a co-organiser of this room',
+                roomId: room._id
+            });
+        }
+
+        // If user is currently a participant, remove from participants
+        room.participants = room.participants.filter(
+            p => p.toString() !== req.user._id.toString()
+        );
+
+        // Add as co-organiser
+        room.coOrganisers.push(req.user._id);
+
+        // Remove the used invite
+        room.pendingInvites = room.pendingInvites.filter(inv => inv.token !== token);
+
+        await room.save();
+
+        res.status(200).json({
+            success: true,
+            message: `You are now a co-organiser of "${room.name}"!`,
+            roomId: room._id
+        });
+    } catch (error) {
+        console.error('Accept co-organiser invite error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to accept invitation'
         });
     }
 };

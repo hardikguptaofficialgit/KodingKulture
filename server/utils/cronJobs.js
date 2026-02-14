@@ -115,6 +115,15 @@ const autoSubmitSingleContest = async (progress, contest) => {
           isCorrect,
           marksAwarded
         });
+
+        // Update MCQ metrics
+        mcq.metrics.attempted++;
+        if (isCorrect) {
+          mcq.metrics.correct++;
+        } else {
+          mcq.metrics.wrong++;
+        }
+        await mcq.save();
       }
     }
   }

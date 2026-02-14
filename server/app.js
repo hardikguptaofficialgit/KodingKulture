@@ -20,7 +20,6 @@ import roomRoutes from './routes/room.routes.js';
 
 // Import middleware
 import { errorHandler } from './middlewares/error.middleware.js';
-import { apiLimiter, speedLimiter } from './middlewares/security.middleware.js';
 
 dotenv.config();
 
@@ -82,9 +81,7 @@ app.use(hpp({
   whitelist: ['status', 'difficulty', 'category', 'page', 'limit', 'sort']
 }));
 
-// 6. Global rate limiting + speed limiter
-app.use('/api', apiLimiter);
-app.use('/api', speedLimiter);
+// 6. Rate limiting - DISABLED
 
 // ===========================================
 // API ROUTES

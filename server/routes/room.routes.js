@@ -7,6 +7,7 @@ import {
     joinRoom,
     joinRoomByLink,
     inviteCoOrganiser,
+    acceptCoOrganiserInvite,
     addMember,
     removeMember,
     leaveRoom,
@@ -28,8 +29,11 @@ router.delete('/:id', protect, deleteRoom);
 router.post('/join', protect, joinRoom);
 router.get('/join/:shortCode', protect, joinRoomByLink);
 
-// Member management
+// Co-organiser invite flow
 router.post('/:id/invite', protect, inviteCoOrganiser);
+router.post('/accept-invite/:token', protect, acceptCoOrganiserInvite);
+
+// Member management
 router.post('/:id/members', protect, addMember);
 router.delete('/:id/members/:userId', protect, removeMember);
 router.post('/:id/leave', protect, leaveRoom);

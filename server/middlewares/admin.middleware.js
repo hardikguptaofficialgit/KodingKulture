@@ -1,4 +1,5 @@
 import Contest from '../models/Contest.js';
+import Room from '../models/Room.js';
 
 // Admin only middleware
 export const adminOnly = (req, res, next) => {
@@ -24,7 +25,7 @@ export const adminOrOrganiser = (req, res, next) => {
   }
 };
 
-// Contest owner middleware - checks if user owns the contest OR is admin
+// Contest owner middleware - checks if user owns the contest, is a room co-organiser, OR is admin
 // Also prevents organisers from editing APPROVED contests
 export const contestOwner = async (req, res, next) => {
   try {
@@ -62,6 +63,14 @@ export const contestOwner = async (req, res, next) => {
         });
       }
       return next();
+    }
+
+    // Check if user is a co-organiser of the room this contest belongs to
+    if (req.user.role === 'ORGANISER' && contest.roomId) {
+      const room = await Room.findById(contest.roomId);
+      if (room && room.isOrganiser(req.user._id)) {
+        return next();
+      }
     }
 
     return res.status(403).json({

@@ -30,6 +30,16 @@ const codingService = {
     return response.data;
   },
 
+  getCodingProgress: async (contestId) => {
+    const response = await api.get(`/submissions/contest/${contestId}/progress`);
+    return response.data;
+  },
+
+  getCodingReview: async (contestId) => {
+    const response = await api.get(`/submissions/contest/${contestId}/review`);
+    return response.data;
+  },
+
   getSubmissionById: async (id) => {
     const response = await api.get(`/submissions/${id}`);
     return response.data;

@@ -28,15 +28,15 @@ import {
   Maximize2
 } from 'lucide-react';
 
-const LANGUAGE_OPTIONS = [
-  { id: 50, name: 'C', monaco: 'c', template: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}' },
-  { id: 54, name: 'C++', monaco: 'cpp', template: '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}' },
-  { id: 62, name: 'Java', monaco: 'java', template: 'public class Main {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}' },
-  { id: 71, name: 'Python', monaco: 'python', template: '# Your code here\n' },
-  { id: 63, name: 'JavaScript', monaco: 'javascript', template: '// Your code here\n' },
-  { id: 60, name: 'Go', monaco: 'go', template: 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Your code here\n}' },
-  { id: 73, name: 'Rust', monaco: 'rust', template: 'fn main() {\n    // Your code here\n}' }
-];
+import { LANGUAGES, DEFAULT_CODE } from '../../utils/constants';
+
+// Map constants.js LANGUAGES to the format needed by CodingSection
+const LANGUAGE_OPTIONS = LANGUAGES.map(lang => ({
+  id: lang.id,
+  name: lang.label,
+  monaco: lang.value,
+  template: DEFAULT_CODE[lang.value] || '// Your code here\n'
+}));
 
 const CodingSection = () => {
   const { contestId } = useParams();
@@ -438,6 +438,13 @@ const CodingSection = () => {
       });
 
       setTestResults(response.submission);
+
+      // Judge0 was unavailable — code saved for manual review
+      if (response.saved) {
+        toast.error('Code execution failed. Please try again later.');
+        fetchSubmissions(problem._id);
+        return;
+      }
 
       if (response.submission.verdict === 'ACCEPTED') {
         toast.success(`Accepted! Score: ${response.submission.score}`);

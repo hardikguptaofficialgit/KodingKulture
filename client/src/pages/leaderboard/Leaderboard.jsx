@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import leaderboardService from '../../services/leaderboardService';
@@ -6,7 +6,8 @@ import api from '../../services/authService';
 import Loader from '../../components/common/Loader';
 import {
   Trophy, Medal, Award, TrendingUp, ChevronDown, ChevronUp,
-  ArrowLeft, FileText, Code, Timer, Clock, Shield, Users, ClipboardList, Download
+  ArrowLeft, FileText, Code, Timer, Clock, Shield, Users, ClipboardList, Download,
+  CheckCircle, XCircle, Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -258,9 +259,8 @@ const Leaderboard = () => {
                 </thead>
                 <tbody className="divide-y divide-dark-800">
                   {leaderboard.map((entry, index) => (
-                    <>
+                    <React.Fragment key={entry._id}>
                       <tr
-                        key={entry._id}
                         className={`hover:bg-dark-800 transition-colors ${entry.rank <= 3 ? 'bg-primary-500/5' : ''
                           } ${isAdminOrOrganiser ? 'cursor-pointer' : ''}`}
                         onClick={() => isAdminOrOrganiser && fetchUserDetails(entry.userId?._id)}
@@ -312,13 +312,27 @@ const Leaderboard = () => {
                       {/* Expanded Details Row (Admin Only) */}
                       {isAdminOrOrganiser && expandedUser === entry.userId?._id && (
                         <tr key={`${entry._id}-details`}>
-                          <td colSpan={7} className="bg-dark-800/80 p-6">
+                          <td colSpan={5 + (formsEnabled ? 1 : 0) + (isAdminOrOrganiser ? 1 : 0)} className="bg-dark-800/80 p-6">
                             {loadingDetails ? (
                               <div className="flex justify-center py-4">
                                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
                               </div>
                             ) : userDetails ? (
                               <div className="space-y-6">
+                                {/* View Answers Button */}
+                                <div className="flex justify-end">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/admin/contest/${contestId}/user/${entry.userId?._id}/answers`);
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    View Full Answers
+                                  </button>
+                                </div>
+
                                 {/* Summary Cards */}
                                 <div className="grid grid-cols-5 gap-4">
                                   <div className="bg-dark-700/50 rounded-lg p-4">
@@ -462,6 +476,128 @@ const Leaderboard = () => {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* MCQ Answer Details */}
+                                {userDetails.mcqAnswerDetails && userDetails.mcqAnswerDetails.length > 0 && (
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+                                      <FileText className="w-4 h-4" />
+                                      MCQ Answer Details
+                                      <span className="text-xs text-gray-500">
+                                        ({userDetails.mcqAnswerDetails.filter(q => q.isCorrect).length}/{userDetails.mcqAnswerDetails.length} correct)
+                                      </span>
+                                    </h4>
+                                    <div className="max-h-64 overflow-y-auto space-y-2">
+                                      {userDetails.mcqAnswerDetails.map((q, i) => (
+                                        <div key={i} className={`bg-dark-700/30 p-3 rounded-lg border-l-3 ${q.isCorrect ? 'border-l-green-500' : 'border-l-red-500'
+                                          }`}>
+                                          <div className="flex items-start justify-between mb-2">
+                                            <span className="text-gray-300 text-sm flex-1">
+                                              <span className="text-gray-500 font-mono mr-2">Q{i + 1}</span>
+                                              {q.questionText}
+                                            </span>
+                                            <div className="flex items-center gap-2 ml-3 shrink-0">
+                                              {q.isCorrect ? (
+                                                <span className="flex items-center gap-1 text-green-400 text-xs font-semibold">
+                                                  <CheckCircle className="w-4 h-4" /> +{q.marksAwarded}
+                                                </span>
+                                              ) : (
+                                                <span className="flex items-center gap-1 text-red-400 text-xs font-semibold">
+                                                  <XCircle className="w-4 h-4" /> {q.marksAwarded}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-1">
+                                            {q.options.map((opt, j) => (
+                                              <div
+                                                key={j}
+                                                className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${opt.isCorrect && opt.wasSelected
+                                                  ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                                  : opt.isCorrect
+                                                    ? 'bg-green-500/10 text-green-400/70 border border-green-500/20'
+                                                    : opt.wasSelected
+                                                      ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                                      : 'bg-dark-600/30 text-gray-500'
+                                                  }`}
+                                              >
+                                                {opt.isCorrect && <CheckCircle className="w-3 h-3" />}
+                                                {opt.wasSelected && !opt.isCorrect && <XCircle className="w-3 h-3" />}
+                                                {opt.text}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Coding Submission Details */}
+                                {userDetails.codingAnswerDetails && userDetails.codingAnswerDetails.length > 0 && (
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+                                      <Code className="w-4 h-4" />
+                                      Coding Submission Details
+                                      <span className="text-xs text-gray-500">
+                                        ({userDetails.codingAnswerDetails.filter(p => p.solved).length}/{userDetails.codingAnswerDetails.length} solved)
+                                      </span>
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {userDetails.codingAnswerDetails.map((p, i) => (
+                                        <div key={i} className={`bg-dark-700/30 p-3 rounded-lg border-l-3 ${p.solved ? 'border-l-green-500' : 'border-l-yellow-500'
+                                          }`}>
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-gray-500 font-mono text-sm">P{i + 1}</span>
+                                              <span className="text-gray-200 font-medium text-sm">{p.title}</span>
+                                              <span className="text-xs px-1.5 py-0.5 rounded bg-dark-600 text-gray-400">{p.category}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                              <span className={`text-sm font-bold ${p.bestScore >= p.maxScore ? 'text-green-400' : 'text-yellow-400'}`}>
+                                                {p.bestScore}/{p.maxScore}
+                                              </span>
+                                              <span className="text-xs text-gray-500">{p.totalAttempts} attempt{p.totalAttempts !== 1 ? 's' : ''}</span>
+                                            </div>
+                                          </div>
+                                          {p.submissions && p.submissions.length > 0 && (
+                                            <div className="max-h-32 overflow-y-auto space-y-1">
+                                              {p.submissions.map((sub, j) => (
+                                                <div key={j} className="flex items-center justify-between bg-dark-600/30 px-2 py-1 rounded text-xs">
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-gray-500 font-mono">#{j + 1}</span>
+                                                    <span className={`px-1.5 py-0.5 rounded font-medium ${sub.verdict === 'ACCEPTED'
+                                                      ? 'bg-green-500/20 text-green-400'
+                                                      : sub.verdict === 'WRONG_ANSWER'
+                                                        ? 'bg-red-500/20 text-red-400'
+                                                        : sub.verdict === 'TIME_LIMIT_EXCEEDED'
+                                                          ? 'bg-yellow-500/20 text-yellow-400'
+                                                          : 'bg-orange-500/20 text-orange-400'
+                                                      }`}>
+                                                      {sub.verdict?.replace(/_/g, ' ')}
+                                                    </span>
+                                                    <span className="text-gray-500">{sub.language}</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-3">
+                                                    <span className="text-gray-400">
+                                                      {sub.testcasesPassed}/{sub.totalTestcases} passed
+                                                    </span>
+                                                    <span className="text-gray-400 font-mono">
+                                                      {sub.score} pts
+                                                    </span>
+                                                    <span className="text-gray-500">
+                                                      {new Date(sub.submittedAt).toLocaleTimeString()}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <p className="text-gray-500 text-center">Failed to load details</p>
@@ -469,7 +605,7 @@ const Leaderboard = () => {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
@@ -484,7 +620,7 @@ const Leaderboard = () => {
           <span className="flex items-center gap-1"><Award className="w-4 h-4 text-orange-600" /> Bronze</span>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

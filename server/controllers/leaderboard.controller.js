@@ -316,6 +316,169 @@ export const getUserDetailedStats = async (req, res) => {
       isEvaluated: sub.isFullyEvaluated
     }));
 
+    // --- MCQ Answer Details (including unanswered) ---
+    // MCQs can be linked via direct contestId OR via ContestMCQ junction table
+    const ContestMCQ = (await import('../models/ContestMCQ.js')).default;
+    const directMcqs = await MCQ.find({ contestId })
+      .select('question options marks negativeMarks category')
+      .lean();
+    const junctionEntries = await ContestMCQ.find({ contestId })
+      .populate({ path: 'mcqId', select: 'question options marks negativeMarks category' })
+      .sort({ order: 1 })
+      .lean();
+
+    // Merge both sources, deduplicate by MCQ _id
+    const allMcqMap = new Map();
+    for (const m of directMcqs) {
+      allMcqMap.set(m._id.toString(), m);
+    }
+    for (const je of junctionEntries) {
+      if (je.mcqId) {
+        const mcq = je.mcqId;
+        if (!allMcqMap.has(mcq._id.toString())) {
+          // Apply junction overrides if set
+          allMcqMap.set(mcq._id.toString(), {
+            ...mcq,
+            marks: je.marks ?? mcq.marks,
+            negativeMarks: je.negativeMarks ?? mcq.negativeMarks
+          });
+        }
+      }
+    }
+    const allContestMcqs = Array.from(allMcqMap.values());
+
+    const answeredMcqMap = new Map();
+    if (result?.mcqAnswers) {
+      for (const answer of result.mcqAnswers) {
+        answeredMcqMap.set(answer.questionId?.toString(), answer);
+      }
+    }
+    const mcqAnswerDetails = allContestMcqs.map(mcq => {
+      const answer = answeredMcqMap.get(mcq._id.toString());
+      if (answer) {
+        return {
+          questionId: mcq._id,
+          questionText: mcq.question,
+          category: mcq.category || 'Unknown',
+          options: mcq.options?.map((opt, idx) => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+            wasSelected: (answer.selectedOptions || []).includes(idx)
+          })) || [],
+          selectedOptions: answer.selectedOptions || [],
+          isCorrect: answer.isCorrect,
+          marksAwarded: answer.marksAwarded,
+          maxMarks: mcq.marks || 1,
+          negativeMarks: mcq.negativeMarks || 0,
+          unanswered: false
+        };
+      } else {
+        return {
+          questionId: mcq._id,
+          questionText: mcq.question,
+          category: mcq.category || 'Unknown',
+          options: mcq.options?.map(opt => ({
+            text: opt.text,
+            isCorrect: opt.isCorrect,
+            wasSelected: false
+          })) || [],
+          selectedOptions: [],
+          isCorrect: false,
+          marksAwarded: 0,
+          maxMarks: mcq.marks || 1,
+          negativeMarks: mcq.negativeMarks || 0,
+          unanswered: true
+        };
+      }
+    });
+
+    // --- Coding Submission Details (including unattempted) ---
+    // Coding problems can be linked via direct contestId OR via ContestCodingProblem junction table
+    const Submission = (await import('../models/Submission.js')).default;
+    const ContestCodingProblemModel = (await import('../models/ContestCodingProblem.js')).default;
+    const directProblems = await CodingProblem.find({ contestId })
+      .select('title category score order')
+      .lean();
+    const codingJunctionEntries = await ContestCodingProblemModel.find({ contestId })
+      .populate({ path: 'problemId', select: 'title category score' })
+      .sort({ order: 1 })
+      .lean();
+
+    // Merge both sources, deduplicate by problem _id
+    const problemMergeMap = new Map();
+    for (const p of directProblems) {
+      problemMergeMap.set(p._id.toString(), p);
+    }
+    for (const je of codingJunctionEntries) {
+      if (je.problemId) {
+        const prob = je.problemId;
+        if (!problemMergeMap.has(prob._id.toString())) {
+          problemMergeMap.set(prob._id.toString(), {
+            ...prob,
+            score: je.score ?? prob.score,
+            order: je.order ?? 0
+          });
+        }
+      }
+    }
+    const allContestProblems = Array.from(problemMergeMap.values())
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    const attemptedProblemMap = new Map();
+    if (result?.codingSubmissions) {
+      for (const cs of result.codingSubmissions) {
+        attemptedProblemMap.set(cs.problemId?.toString(), cs);
+      }
+    }
+    const codingAnswerDetails = [];
+    for (const problem of allContestProblems) {
+      const cs = attemptedProblemMap.get(problem._id.toString());
+
+      // Always query submissions directly — they may exist even if result doesn't track them
+      const allSubs = await Submission.find({
+        userId, contestId, problemId: problem._id
+      }).select('verdict score testcasesPassed totalTestcases language submittedAt sourceCode').sort({ submittedAt: 1 }).lean();
+
+      if (allSubs.length > 0) {
+        // Has submissions — show them (whether result tracks them or not)
+        const bestScore = cs?.score || Math.max(...allSubs.map(s => s.score || 0), 0);
+        const solved = cs?.solved || allSubs.some(s => s.verdict === 'ACCEPTED');
+
+        codingAnswerDetails.push({
+          problemId: problem._id,
+          title: problem.title,
+          category: problem.category || 'Unknown',
+          maxScore: problem.score || 100,
+          bestScore,
+          solved,
+          totalAttempts: allSubs.length,
+          unanswered: false,
+          submissions: allSubs.map(sub => ({
+            submissionId: sub._id,
+            verdict: sub.verdict,
+            score: sub.score,
+            testcasesPassed: sub.testcasesPassed,
+            totalTestcases: sub.totalTestcases,
+            language: sub.language,
+            submittedAt: sub.submittedAt
+          }))
+        });
+      } else {
+        // Truly unanswered — no submissions at all
+        codingAnswerDetails.push({
+          problemId: problem._id,
+          title: problem.title,
+          category: problem.category || 'Unknown',
+          maxScore: problem.score || 100,
+          bestScore: 0,
+          solved: false,
+          totalAttempts: 0,
+          unanswered: true,
+          submissions: []
+        });
+      }
+    }
+
     res.status(200).json({
       success: true,
       userDetails: {
@@ -335,10 +498,16 @@ export const getUserDetailedStats = async (req, res) => {
         mcqCategoryTime,
         codingCategoryTime,
 
-        // Per-question/problem/form details
+        // Per-question/problem/form time details
         mcqTimeDetails,
         codingTimeDetails,
         formsTimeDetails,
+
+        // MCQ answer details (what they answered, correct/wrong per question)
+        mcqAnswerDetails,
+
+        // Coding submission details (per problem: attempts, verdicts, scores)
+        codingAnswerDetails,
 
         // Scores
         mcqScore: result?.mcqScore || 0,
