@@ -266,7 +266,7 @@ const ManageMCQ = () => {
     <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate('/admin/dashboard')}
@@ -275,7 +275,7 @@ const ManageMCQ = () => {
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold mb-2">Manage MCQs</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-2">Manage MCQs</h1>
               <p className="text-gray-400">{mcqs.length} questions in contest</p>
             </div>
           </div>
@@ -618,7 +618,7 @@ const ManageMCQ = () => {
             </div>
 
             {/* Filters */}
-            <div className="p-4 border-b border-dark-700 flex gap-4">
+            <div className="p-4 border-b border-dark-700 flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -632,7 +632,7 @@ const ManageMCQ = () => {
               <select
                 value={libraryFilter.category}
                 onChange={(e) => setLibraryFilter({ ...libraryFilter, category: e.target.value })}
-                className="input w-48"
+                className="input w-full sm:w-48"
               >
                 <option value="">All Categories</option>
                 {MCQ_CATEGORIES.map(cat => (

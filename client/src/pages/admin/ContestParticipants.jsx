@@ -117,7 +117,7 @@ const ContestParticipants = () => {
                         <ArrowLeft className="w-5 h-5" />
                         Back to Dashboard
                     </Link>
-                    <h1 className="text-3xl font-bold gradient-text flex items-center gap-3">
+                    <h1 className="text-xl sm:text-3xl font-bold gradient-text flex items-center gap-3">
                         <Users className="w-8 h-8 text-primary-500" />
                         Contest Participants
                     </h1>
@@ -160,8 +160,8 @@ const ContestParticipants = () => {
                             key={f}
                             onClick={() => setFilter(f)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
-                                    ? 'bg-primary-500 text-white'
-                                    : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
+                                ? 'bg-primary-500 text-white'
+                                : 'bg-dark-800 text-gray-400 hover:bg-dark-700'
                                 }`}
                         >
                             {f.replace('_', ' ')}

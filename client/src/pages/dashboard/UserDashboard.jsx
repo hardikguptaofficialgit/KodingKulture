@@ -86,28 +86,28 @@ const UserDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Header */}
         <div className="card mb-8">
-          <div className="flex items-center gap-6">
-            <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-6 rounded-2xl">
-              <User className="w-12 h-12 text-white" />
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-4 sm:p-6 rounded-2xl">
+              <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-1">{user?.name}</h1>
-              <p className="text-gray-400">{user?.email}</p>
+            <div className="flex-1 text-center sm:text-left min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 truncate">{user?.name}</h1>
+              <p className="text-gray-400 text-sm sm:text-base truncate">{user?.email}</p>
               {user?.college && (
-                <p className="text-gray-500 text-sm mt-1">{user.college}</p>
+                <p className="text-gray-500 text-sm mt-1 truncate">{user.college}</p>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors border border-primary-500/30"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors border border-primary-500/30 text-sm"
               >
                 <Edit className="w-4 h-4" />
-                Edit Profile
+                <span className="hidden sm:inline">Edit Profile</span>
               </button>
               <div className="text-right">
-                <div className="text-sm text-gray-400 mb-1">Role</div>
-                <span className="badge-primary text-lg">{user?.role}</span>
+                <div className="text-xs sm:text-sm text-gray-400 mb-1">Role</div>
+                <span className="badge-primary text-sm sm:text-lg">{user?.role}</span>
               </div>
             </div>
           </div>

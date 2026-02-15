@@ -148,7 +148,7 @@ const ContestReview = () => {
                 {activeTab === 'mcq' && hasMCQ && (
                     <>
                         {/* Summary Cards */}
-                        <div className="grid grid-cols-4 gap-4 mb-8">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                             <div className="card bg-dark-800/50 text-center p-4">
                                 <p className="text-2xl font-bold text-primary-500">{result?.mcqScore || 0}</p>
                                 <p className="text-sm text-gray-400">MCQ Score</p>
@@ -285,7 +285,7 @@ const ContestReview = () => {
                         {/* Question Grid */}
                         <div className="card">
                             <h3 className="text-lg font-semibold text-white mb-4">Question Overview</h3>
-                            <div className="grid grid-cols-10 gap-2">
+                            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
                                 {mcqReview.map((mcq, index) => {
                                     const answered = mcq.userAnswer?.length > 0;
                                     const correct = mcq.isCorrect;

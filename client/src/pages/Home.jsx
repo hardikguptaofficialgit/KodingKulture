@@ -94,7 +94,7 @@ const Home = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-16 pt-16 border-t border-dark-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-2xl mx-auto mt-12 sm:mt-16 pt-12 sm:pt-16 border-t border-dark-800">
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold text-primary-500 mb-2">
                   <AnimatedCounter target={500} suffix="+" duration={2000} />
@@ -122,7 +122,7 @@ const Home = () => {
       <section className="py-20 bg-dark-900/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Why Choose Our Platform?</h2>
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Why Choose Our Platform?</h2>
             <p className="text-xl text-gray-400">Everything you need to excel in competitive programming</p>
           </div>
 
@@ -202,7 +202,7 @@ const Home = () => {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="card glow-effect">
               <Award className="w-16 h-16 text-primary-500 mx-auto mb-6" />
-              <h2 className="text-4xl font-bold text-white mb-4">Ready to Start?</h2>
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Ready to Start?</h2>
               <p className="text-xl text-gray-400 mb-8">
                 Join thousands of developers competing in weekly contests
               </p>
@@ -221,7 +221,7 @@ const Home = () => {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="card glow-effect">
               <Trophy className="w-16 h-16 text-primary-500 mx-auto mb-6" />
-              <h2 className="text-4xl font-bold text-white mb-4">Ready to Compete?</h2>
+              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Ready to Compete?</h2>
               <p className="text-xl text-gray-400 mb-8">
                 Browse upcoming contests and test your skills
               </p>

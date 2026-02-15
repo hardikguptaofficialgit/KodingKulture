@@ -158,12 +158,12 @@ const ContestDetails = () => {
 
         {/* Title & Description */}
         <div className="card mb-6">
-          <h1 className="text-4xl font-bold text-white mb-2">{contest.title}</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2">{contest.title}</h1>
           <p className="text-sm text-gray-500 mb-4">Hosted by {contest.createdBy?.name || 'Admin'}</p>
-          <p className="text-gray-400 text-lg mb-6">{contest.description}</p>
+          <p className="text-gray-400 text-base sm:text-lg mb-6">{contest.description}</p>
 
           {/* Info Grid - Row 1: Start/End Time */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
               <Calendar className="w-6 h-6 text-green-500" />
               <div>
@@ -181,26 +181,26 @@ const ContestDetails = () => {
           </div>
 
           {/* Info Grid - Row 2: Duration, Participants, Marks */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
-              <Clock className="w-6 h-6 text-primary-500" />
-              <div>
-                <div className="text-sm text-gray-400">Duration</div>
-                <div className="text-white font-semibold">{contest.duration} minutes</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm text-gray-400">Duration</div>
+                <div className="text-white font-semibold text-sm sm:text-base">{contest.duration} minutes</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
-              <Users className="w-6 h-6 text-primary-500" />
-              <div>
-                <div className="text-sm text-gray-400">Participants</div>
-                <div className="text-white font-semibold">{contest.participants?.length || 0} registered</div>
+            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm text-gray-400">Participants</div>
+                <div className="text-white font-semibold text-sm sm:text-base">{contest.participants?.length || 0} registered</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
-              <Award className="w-6 h-6 text-primary-500" />
-              <div>
-                <div className="text-sm text-gray-400">Total Marks</div>
-                <div className="text-white font-semibold">
+            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
+              <Award className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm text-gray-400">Total Marks</div>
+                <div className="text-white font-semibold text-sm sm:text-base">
                   {(contest.sections.mcq?.totalMarks || 0) + (contest.sections.coding?.totalMarks || 0) + (contest.sections.forms?.totalMarks || 0)} points
                 </div>
               </div>
@@ -210,7 +210,7 @@ const ContestDetails = () => {
           {/* Sections Preview - Flex layout for dynamic sizing */}
           <div className="flex flex-wrap gap-4 mb-6">
             {contest.sections.mcq?.enabled && (
-              <div className="flex-1 min-w-[250px] bg-dark-800 p-4 rounded-lg border border-dark-700 flex flex-col items-center justify-center text-center">
+              <div className="flex-1 min-w-[200px] bg-dark-800 p-4 rounded-lg border border-dark-700 flex flex-col items-center justify-center text-center">
                 <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-6 h-6 text-primary-500" />
                   <h3 className="text-lg font-semibold text-white">MCQ Section</h3>

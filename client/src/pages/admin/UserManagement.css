@@ -373,3 +373,46 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .user-management {
+    padding: 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+  }
+
+  .search-form {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .users-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+
+  .make-organiser-btn,
+  .remove-organiser-btn,
+  .add-to-room-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+  }
+}

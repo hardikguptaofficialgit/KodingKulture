@@ -165,7 +165,7 @@ const Leaderboard = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -176,34 +176,34 @@ const Leaderboard = () => {
 
             {/* Admin/Organiser: View Participants & Violations Button */}
             {isAdminOrOrganiser && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={exportToCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/30"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/30 text-sm"
                 >
                   <Download className="w-4 h-4" />
-                  Export CSV
+                  <span className="hidden sm:inline">Export CSV</span>
                 </button>
                 <Link
                   to={`/admin/contest/${contestId}/participants`}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors border border-purple-500/30"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors border border-purple-500/30 text-sm"
                 >
                   <Users className="w-4 h-4" />
-                  Participants
+                  <span className="hidden sm:inline">Participants</span>
                 </Link>
                 <Link
                   to={`/admin/contest/${contestId}/violations`}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/30"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/30 text-sm"
                 >
                   <Shield className="w-4 h-4" />
-                  Violations
+                  <span className="hidden sm:inline">Violations</span>
                 </Link>
               </div>
             )}
           </div>
 
-          <h1 className="text-4xl font-bold gradient-text mb-2 flex items-center gap-3">
-            <Trophy className="w-10 h-10 text-primary-500" />
+          <h1 className="text-2xl sm:text-4xl font-bold gradient-text mb-2 flex items-center gap-3">
+            <Trophy className="w-7 h-7 sm:w-10 sm:h-10 text-primary-500" />
             Leaderboard
           </h1>
           {stats && <p className="text-gray-400">{stats.contestTitle}</p>}
@@ -247,14 +247,14 @@ const Leaderboard = () => {
               <table className="w-full">
                 <thead className="bg-dark-800 border-b border-dark-700">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Rank</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Participant</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">MCQ Score</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Coding Score</th>
-                    {formsEnabled && <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Forms Score</th>}
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Total Score</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Time Taken</th>
-                    {isAdminOrOrganiser && <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Details</th>}
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300">Rank</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300">Participant</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300 hidden sm:table-cell">MCQ</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300 hidden sm:table-cell">Coding</th>
+                    {formsEnabled && <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300 hidden sm:table-cell">Forms</th>}
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300">Total</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300 hidden sm:table-cell">Time</th>
+                    {isAdminOrOrganiser && <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300">Details</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-800">
@@ -265,26 +265,26 @@ const Leaderboard = () => {
                           } ${isAdminOrOrganiser ? 'cursor-pointer' : ''}`}
                         onClick={() => isAdminOrOrganiser && fetchUserDetails(entry.userId?._id)}
                       >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             {getRankIcon(entry.rank)}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm sm:text-base flex-shrink-0">
                               {entry.userId?.name?.charAt(0).toUpperCase() || 'U'}
                             </div>
-                            <div>
-                              <div className="font-semibold text-white">{entry.userId?.name}</div>
-                              {isAdminOrOrganiser && <div className="text-sm text-gray-500">{entry.userId?.email}</div>}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-white text-sm sm:text-base truncate">{entry.userId?.name}</div>
+                              {isAdminOrOrganiser && <div className="text-xs sm:text-sm text-gray-500 truncate">{entry.userId?.email}</div>}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center text-blue-400 font-semibold">{entry.mcqScore || 0}</td>
-                        <td className="px-6 py-4 text-center text-green-400 font-semibold">{entry.codingScore || 0}</td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-blue-400 font-semibold hidden sm:table-cell">{entry.mcqScore || 0}</td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-green-400 font-semibold hidden sm:table-cell">{entry.codingScore || 0}</td>
                         {formsEnabled && (
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-center hidden sm:table-cell">
                             {entry.isFormsEvaluated ? (
                               <span className="text-cyan-400 font-semibold">{entry.formsScore || 0}</span>
                             ) : (
@@ -292,14 +292,14 @@ const Leaderboard = () => {
                             )}
                           </td>
                         )}
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-bold text-primary-500 text-lg">{entry.totalScore}</span>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
+                          <span className="font-bold text-primary-500 text-base sm:text-lg">{entry.totalScore}</span>
                         </td>
-                        <td className="px-6 py-4 text-center text-gray-400">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-center text-gray-400 hidden sm:table-cell">
                           {formatTime(entry.timeTaken)}
                         </td>
                         {isAdminOrOrganiser && (
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                             {expandedUser === entry.userId?._id ? (
                               <ChevronUp className="w-5 h-5 text-primary-400 mx-auto" />
                             ) : (
@@ -334,7 +334,7 @@ const Leaderboard = () => {
                                 </div>
 
                                 {/* Summary Cards */}
-                                <div className="grid grid-cols-5 gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                                   <div className="bg-dark-700/50 rounded-lg p-4">
                                     <div className="flex items-center gap-2 text-blue-400 mb-2">
                                       <FileText className="w-5 h-5" />
@@ -373,7 +373,7 @@ const Leaderboard = () => {
                                 </div>
 
                                 {/* Category Time Breakdown */}
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                   {/* MCQ Categories */}
                                   <div>
                                     <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
@@ -414,7 +414,7 @@ const Leaderboard = () => {
                                 </div>
 
                                 {/* Per Question/Problem Details */}
-                                <div className="grid grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {/* MCQ Questions */}
                                   <div>
                                     <h4 className="text-sm font-semibold text-gray-400 mb-3">MCQ Question Times</h4>
@@ -614,7 +614,7 @@ const Leaderboard = () => {
         </div>
 
         {/* Legend */}
-        <div className="mt-6 flex items-center gap-6 text-sm text-gray-400">
+        <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-400">
           <span className="flex items-center gap-1"><Trophy className="w-4 h-4 text-yellow-500" /> Gold</span>
           <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-gray-400" /> Silver</span>
           <span className="flex items-center gap-1"><Award className="w-4 h-4 text-orange-600" /> Bronze</span>
