@@ -488,85 +488,91 @@ const CodingSection = () => {
   return (
     <div className="h-screen flex flex-col bg-dark-900">
       {/* Header */}
-      <div className="bg-dark-800 border-b border-dark-700 px-4 py-3 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="bg-dark-800 border-b border-dark-700 px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0">
+        {/* Row 1: Back + Title */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               onClick={() => navigate(`/contest/${contestId}/hub`)}
-              className="text-gray-400 hover:text-white flex items-center gap-2"
+              className="text-gray-400 hover:text-white flex items-center gap-1 flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
-              Back to Hub
+              <span className="hidden sm:inline">Back to Hub</span>
             </button>
-            <h1 className="text-lg font-bold">{problem.title}</h1>
-            <span className={`badge-${problem.difficulty.toLowerCase()}`}>
+            <h1 className="text-sm sm:text-lg font-bold truncate">{problem.title}</h1>
+            <span className={`badge-${problem.difficulty.toLowerCase()} hidden sm:inline`}>
               {problem.difficulty}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             {/* Timer Display */}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-lg font-semibold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
+            <div className={`flex items-center gap-1.5 px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-mono text-sm sm:text-lg font-semibold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
               }`}>
-              <Clock className="w-5 h-5" />
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>{formattedTime}</span>
             </div>
 
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-400 hidden sm:block">
               Score: <span className="text-primary-400 font-semibold">{problem.score}</span>
             </div>
+          </div>
+        </div>
 
-            <select
-              value={selectedLanguage.id}
-              onChange={(e) => handleLanguageChange(LANGUAGE_OPTIONS.find(l => l.id === parseInt(e.target.value)))}
-              className="bg-dark-700 border border-dark-600 rounded-lg px-3 py-2 text-sm"
-            >
-              {LANGUAGE_OPTIONS.map(lang => (
-                <option key={lang.id} value={lang.id}>{lang.name}</option>
-              ))}
-            </select>
+        {/* Row 2: Language + Actions */}
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <select
+            value={selectedLanguage.id}
+            onChange={(e) => handleLanguageChange(LANGUAGE_OPTIONS.find(l => l.id === parseInt(e.target.value)))}
+            className="bg-dark-700 border border-dark-600 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
+          >
+            {LANGUAGE_OPTIONS.map(lang => (
+              <option key={lang.id} value={lang.id}>{lang.name}</option>
+            ))}
+          </select>
 
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleRunCode}
               disabled={running}
-              className="btn-secondary"
+              className="btn-secondary px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
             >
-              {running ? <Loader className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
-              Run
+              {running ? <Loader className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              <span className="hidden sm:inline ml-1">Run</span>
             </button>
 
             <button
               onClick={handleCheckTestCases}
               disabled={checking}
-              className="btn-secondary"
+              className="btn-secondary px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
             >
-              {checking ? <Loader className="w-4 h-4 mr-2 animate-spin" /> : <CheckSquare className="w-4 h-4 mr-2" />}
-              Check All
+              {checking ? <Loader className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
+              <span className="hidden sm:inline ml-1">Check All</span>
             </button>
 
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="btn-primary"
+              className="btn-primary px-2 sm:px-3 py-1.5 text-xs sm:text-sm"
             >
-              {submitting ? <Loader className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              Submit
+              {submitting ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span className="hidden sm:inline ml-1">Submit</span>
             </button>
           </div>
         </div>
 
         {/* Problem Navigation */}
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 mt-2 overflow-x-auto">
           {problems.map((p, index) => (
             <button
               key={p._id}
               onClick={() => handleProblemChange(index)}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${index === currentProblem
+              className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${index === currentProblem
                 ? 'bg-primary-500 text-white'
                 : 'bg-dark-700 text-gray-400 hover:bg-dark-600'
                 }`}
             >
-              Problem {index + 1}
+              P{index + 1}
             </button>
           ))}
         </div>

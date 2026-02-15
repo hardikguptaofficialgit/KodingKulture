@@ -375,3 +375,55 @@
     text-align: center;
     margin-bottom: 1.5rem;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .verify-contests {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .contests-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .questions-summary {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-wrap: wrap;
+    }
+
+    .approve-btn,
+    .reject-btn,
+    .view-btn {
+        font-size: 0.85rem;
+        padding: 0.6rem;
+    }
+
+    .modal-overlay {
+        padding: 1rem;
+    }
+
+    .modal {
+        padding: 1.25rem;
+        width: 100%;
+    }
+
+    .details-modal {
+        max-height: 85vh;
+    }
+
+    .modal-actions {
+        flex-wrap: wrap;
+    }
+
+    .questions-list li {
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+    }
+}

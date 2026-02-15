@@ -68,7 +68,7 @@ const Certificate = () => {
       <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 py-16">
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <Award className="w-24 h-24 text-primary-400 mx-auto mb-8" />
-          <h1 className="text-4xl font-bold mb-4">Certificate Not Generated</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold mb-4">Certificate Not Generated</h1>
           <p className="text-gray-400 mb-8">
             Complete the contest to generate your certificate
           </p>
@@ -109,11 +109,11 @@ const Certificate = () => {
         </div>
 
         {/* Certificate */}
-        <div className="bg-white rounded-lg p-12 shadow-2xl print:shadow-none relative overflow-hidden">
+        <div className="bg-white rounded-lg p-6 sm:p-12 shadow-2xl print:shadow-none relative overflow-hidden">
           {/* Decorative Elements */}
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 via-orange-400 to-yellow-400"></div>
           <div className="absolute bottom-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-400 to-primary-500"></div>
-          
+
           {/* Content */}
           <div className="text-center space-y-6">
             {/* Logo/Badge */}
@@ -125,7 +125,7 @@ const Certificate = () => {
 
             {/* Certificate Title */}
             <div>
-              <h1 className="text-5xl font-bold text-gray-800 mb-2">
+              <h1 className="text-3xl sm:text-5xl font-bold text-gray-800 mb-2">
                 Certificate of Achievement
               </h1>
               <p className="text-gray-500 text-lg">
@@ -135,7 +135,7 @@ const Certificate = () => {
 
             {/* User Name */}
             <div className="py-6">
-              <h2 className="text-4xl font-bold text-primary-600 mb-2">
+              <h2 className="text-2xl sm:text-4xl font-bold text-primary-600 mb-2">
                 {certificate.userName}
               </h2>
               <div className="w-64 h-1 bg-gradient-to-r from-transparent via-primary-400 to-transparent mx-auto"></div>
@@ -146,7 +146,7 @@ const Certificate = () => {
               <p className="text-xl text-gray-700">
                 has successfully completed
               </p>
-              <h3 className="text-3xl font-bold text-gray-800">
+              <h3 className="text-xl sm:text-3xl font-bold text-gray-800">
                 {certificate.contestTitle}
               </h3>
               <p className="text-xl text-gray-700">
@@ -164,19 +164,19 @@ const Certificate = () => {
             </div>
 
             {/* Footer */}
-            <div className="pt-12 mt-12 border-t-2 border-gray-200">
-              <div className="flex justify-between items-end">
-                <div className="text-left">
+            <div className="pt-8 sm:pt-12 mt-8 sm:mt-12 border-t-2 border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:items-end">
+                <div className="text-center sm:text-left">
                   <p className="text-sm text-gray-500 mb-1">Issue Date</p>
                   <p className="text-lg font-semibold text-gray-700">{certificate.issueDate}</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="w-48 border-t-2 border-gray-800 mb-2"></div>
                   <p className="text-sm font-semibold text-gray-700">Authorized Signature</p>
                 </div>
-                
-                <div className="text-right">
+
+                <div className="text-center sm:text-right">
                   <p className="text-sm text-gray-500 mb-1">Certificate ID</p>
                   <p className="text-lg font-mono font-semibold text-gray-700">
                     {certificate.certificateId}
@@ -197,7 +197,7 @@ const Certificate = () => {
           <p className="text-gray-400 mb-4">
             Congratulations on your achievement! Share it with your friends and on social media.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => navigate('/contests')}
               className="btn-secondary"

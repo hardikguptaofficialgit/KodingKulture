@@ -175,23 +175,23 @@ const FormSection = () => {
     }
 
     return (
-        <div className="min-h-screen bg-dark-900 p-6">
+        <div className="min-h-screen bg-dark-900 p-3 sm:p-6">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                     <button
                         onClick={() => navigate(`/contest/${contestId}/hub`)}
-                        className="flex items-center gap-2 text-gray-400 hover:text-white"
+                        className="flex items-center gap-1 sm:gap-2 text-gray-400 hover:text-white"
                     >
                         <ArrowLeft className="w-5 h-5" />
-                        Back to Hub
+                        <span className="hidden sm:inline">Back to Hub</span>
                     </button>
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-lg font-bold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'}`}>
-                        <Clock className="w-5 h-5" />
+                    <div className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-mono text-sm sm:text-lg font-bold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'}`}>
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span>{formattedTime}</span>
                     </div>
                     <div className="text-right">
-                        <span className="text-gray-400">Form {currentFormIndex + 1} of {forms.length}</span>
+                        <span className="text-gray-400 text-sm">Form {currentFormIndex + 1} of {forms.length}</span>
                     </div>
                 </div>
 
@@ -223,7 +223,7 @@ const FormSection = () => {
                     <div className="card">
                         <div className="flex items-center gap-3 mb-4">
                             <ClipboardList className="w-6 h-6 text-primary-500" />
-                            <h1 className="text-2xl font-bold text-white">{currentForm.title}</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white">{currentForm.title}</h1>
                         </div>
                         {currentForm.description && (
                             <p className="text-gray-400 mb-6">{currentForm.description}</p>

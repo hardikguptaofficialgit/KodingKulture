@@ -127,7 +127,7 @@ const UserAnswerReview = () => {
         <div className="min-h-screen bg-dark-900">
             {/* Header */}
             <div className="bg-dark-800 border-b border-dark-700">
-                <div className="max-w-7xl mx-auto px-6 py-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
@@ -136,7 +136,7 @@ const UserAnswerReview = () => {
                         Back to Leaderboard
                     </button>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-white">
                                 {userDetails.user?.name || 'Unknown User'}
@@ -147,7 +147,7 @@ const UserAnswerReview = () => {
                         </div>
 
                         {/* Score Summary */}
-                        <div className="flex items-center gap-6">
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                             <div className="text-center">
                                 <p className="text-xs text-gray-500 uppercase">MCQ Score</p>
                                 <p className="text-xl font-bold text-blue-400">{userDetails.mcqScore}</p>
@@ -156,7 +156,7 @@ const UserAnswerReview = () => {
                                 <p className="text-xs text-gray-500 uppercase">Coding Score</p>
                                 <p className="text-xl font-bold text-green-400">{userDetails.codingScore}</p>
                             </div>
-                            <div className="text-center border-l border-dark-600 pl-6">
+                            <div className="text-center border-l border-dark-600 pl-4 sm:pl-6">
                                 <p className="text-xs text-gray-500 uppercase">Total</p>
                                 <p className="text-xl font-bold text-primary-400">{userDetails.totalScore}</p>
                             </div>
@@ -208,7 +208,7 @@ const UserAnswerReview = () => {
             </div>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
                 {/* MCQ Tab */}
                 {activeTab === 'mcq' && (
                     <div className="space-y-4">
@@ -225,16 +225,16 @@ const UserAnswerReview = () => {
                                         }`}
                                 >
                                     {/* Question Header */}
-                                    <div className={`px-6 py-4 border-b ${q.unanswered ? 'border-amber-500/10 bg-amber-500/5' : q.isCorrect ? 'border-green-500/10 bg-green-500/5' : 'border-red-500/10 bg-red-500/5'
+                                    <div className={`px-4 sm:px-6 py-4 border-b ${q.unanswered ? 'border-amber-500/10 bg-amber-500/5' : q.isCorrect ? 'border-green-500/10 bg-green-500/5' : 'border-red-500/10 bg-red-500/5'
                                         }`}>
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex items-start justify-between gap-2">
                                             <div className="flex items-start gap-3 flex-1">
                                                 <span className="text-gray-500 font-mono text-sm mt-0.5 shrink-0">
                                                     Q{i + 1}
                                                 </span>
                                                 <p className="text-gray-200">{q.questionText}</p>
                                             </div>
-                                            <div className="flex items-center gap-3 ml-4 shrink-0">
+                                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 ml-2 sm:ml-4 shrink-0">
                                                 <span className={`text-xs px-2 py-1 rounded ${q.unanswered
                                                     ? 'bg-amber-500/20 text-amber-400'
                                                     : q.isCorrect
@@ -264,7 +264,7 @@ const UserAnswerReview = () => {
                                     </div>
 
                                     {/* Options */}
-                                    <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="px-4 sm:px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                                         {q.options.map((opt, j) => (
                                             <div
                                                 key={j}
@@ -309,13 +309,13 @@ const UserAnswerReview = () => {
                             userDetails.codingAnswerDetails.map((problem, i) => (
                                 <div key={i} className={`bg-dark-800 rounded-xl border overflow-hidden ${problem.unanswered ? 'border-amber-500/20' : 'border-dark-700'}`}>
                                     {/* Problem Header */}
-                                    <div className={`px-6 py-4 border-b border-dark-700 ${problem.unanswered ? 'bg-amber-500/5' : problem.solved ? 'bg-green-500/5' : 'bg-dark-750'
+                                    <div className={`px-4 sm:px-6 py-4 border-b border-dark-700 ${problem.unanswered ? 'bg-amber-500/5' : problem.solved ? 'bg-green-500/5' : 'bg-dark-750'
                                         }`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
                                                 <span className="text-gray-500 font-mono text-sm">P{i + 1}</span>
-                                                <h3 className="text-lg font-semibold text-white">{problem.title}</h3>
-                                                <span className="text-xs px-2 py-1 rounded bg-dark-600 text-gray-400">
+                                                <h3 className="text-base sm:text-lg font-semibold text-white truncate">{problem.title}</h3>
+                                                <span className="text-xs px-2 py-1 rounded bg-dark-600 text-gray-400 shrink-0">
                                                     {problem.category}
                                                 </span>
                                             </div>
@@ -359,10 +359,10 @@ const UserAnswerReview = () => {
                                                 <div key={j} className="group">
                                                     {/* Submission Row */}
                                                     <div
-                                                        className="px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-dark-700/30 transition-colors"
+                                                        className="px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between cursor-pointer hover:bg-dark-700/30 transition-colors gap-2"
                                                         onClick={() => sub.submissionId && toggleSubmission(sub.submissionId)}
                                                     >
-                                                        <div className="flex items-center gap-4">
+                                                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                                                             {sub.submissionId ? (
                                                                 isExpanded ?
                                                                     <ChevronDown className="w-4 h-4 text-gray-500" /> :
@@ -378,7 +378,7 @@ const UserAnswerReview = () => {
                                                                 {sub.language}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center gap-6 text-sm">
+                                                        <div className="flex items-center gap-3 sm:gap-6 text-sm flex-wrap">
                                                             <span className="text-gray-400">
                                                                 {sub.testcasesPassed}/{sub.totalTestcases} testcases
                                                             </span>
@@ -393,7 +393,7 @@ const UserAnswerReview = () => {
 
                                                     {/* Expanded Source Code */}
                                                     {isExpanded && sub.submissionId && (
-                                                        <div className="px-6 pb-4">
+                                                        <div className="px-4 sm:px-6 pb-4">
                                                             {isLoadingCode ? (
                                                                 <div className="flex items-center justify-center py-6">
                                                                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary-500"></div>

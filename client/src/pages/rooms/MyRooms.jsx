@@ -75,9 +75,9 @@ const MyRooms = () => {
         <div className="min-h-screen bg-dark-950 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">My Rooms</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white">My Rooms</h1>
                         <p className="text-gray-400 mt-1">
                             {isOrganiser
                                 ? 'Create and manage your private contest rooms'
@@ -87,15 +87,15 @@ const MyRooms = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={() => setShowJoinModal(true)}
-                            className="btn-secondary flex items-center gap-2"
+                            className="btn-secondary flex items-center gap-2 text-sm"
                         >
                             <LogIn className="w-5 h-5" />
-                            Join Room
+                            <span className="hidden sm:inline">Join Room</span>
                         </button>
                         {isOrganiser && (
-                            <Link to="/rooms/create" className="btn-primary flex items-center gap-2">
+                            <Link to="/rooms/create" className="btn-primary flex items-center gap-2 text-sm">
                                 <Plus className="w-5 h-5" />
-                                Create Room
+                                <span className="hidden sm:inline">Create Room</span>
                             </Link>
                         )}
                     </div>

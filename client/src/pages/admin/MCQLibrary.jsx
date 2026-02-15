@@ -188,7 +188,7 @@ const MCQLibrary = () => {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold">MCQ Library</h1>
+                        <h1 className="text-xl sm:text-3xl font-bold">MCQ Library</h1>
                         <p className="text-gray-400">Manage reusable MCQ questions</p>
                     </div>
                     <button

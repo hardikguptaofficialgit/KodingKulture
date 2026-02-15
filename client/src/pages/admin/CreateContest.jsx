@@ -282,7 +282,7 @@ const CreateContest = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">{isEditMode ? 'Edit Contest' : 'Create New Contest'}</h1>
+            <h1 className="text-xl sm:text-3xl font-bold mb-2">{isEditMode ? 'Edit Contest' : 'Create New Contest'}</h1>
             <p className="text-gray-400">{isEditMode ? 'Update contest details' : 'Fill in the details to create a new contest'}</p>
           </div>
 

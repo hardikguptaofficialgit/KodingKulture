@@ -182,21 +182,21 @@ const ContestHub = () => {
         <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
             {/* Fixed Timer Header */}
             <div className="bg-dark-800 border-b border-dark-700 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                             <button
                                 onClick={handleLeaveContest}
-                                className="text-gray-400 hover:text-white"
+                                className="text-gray-400 hover:text-white flex-shrink-0"
                             >
                                 <ArrowLeft className="w-5 h-5" />
                             </button>
-                            <h1 className="text-xl font-bold">{contest?.title || 'Contest'}</h1>
+                            <h1 className="text-base sm:text-xl font-bold truncate">{contest?.title || 'Contest'}</h1>
                         </div>
 
-                        <div className={`flex items-center gap-2 px-6 py-3 rounded-lg font-mono text-2xl font-bold ${isTimeLow ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
+                        <div className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-mono text-lg sm:text-2xl font-bold flex-shrink-0 ${isTimeLow ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
                             }`}>
-                            <Clock className="w-6 h-6" />
+                            <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
                             <span>{formattedTime}</span>
                         </div>
                     </div>

@@ -202,9 +202,9 @@ const CodingLibrary = () => {
         <div className="min-h-screen bg-dark-900 py-8">
             <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold">Coding Problem Library</h1>
+                        <h1 className="text-xl sm:text-3xl font-bold">Coding Problem Library</h1>
                         <p className="text-gray-400">Manage reusable coding problems</p>
                     </div>
                     <button
@@ -358,7 +358,7 @@ const CodingLibrary = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6 text-sm text-gray-400 border-t border-dark-700 pt-3">
+                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-400 border-t border-dark-700 pt-3">
                                         <div className="flex items-center gap-1">
                                             <span className="text-primary-400 font-semibold">{problem.score}</span> points
                                         </div>
@@ -420,7 +420,7 @@ const CodingLibrary = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Category</label>
                                     <select
@@ -457,7 +457,7 @@ const CodingLibrary = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Input Format *</label>
                                     <textarea
@@ -488,7 +488,7 @@ const CodingLibrary = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-2">Time Limit (seconds)</label>
                                     <input

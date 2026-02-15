@@ -308,31 +308,31 @@ const MCQSection = () => {
       {/* Header */}
       <div className="bg-dark-800 border-b border-dark-700 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <button
                 onClick={handleSaveAndBackToHub}
-                className="text-gray-400 hover:text-white flex items-center gap-2"
+                className="text-gray-400 hover:text-white flex items-center gap-1 sm:gap-2 flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
-                Save & Back to Hub
+                <span className="hidden sm:inline">Save & Back to Hub</span>
               </button>
-              <div>
-                <h1 className="text-xl font-bold">{contestInfo?.title || 'MCQ Section'}</h1>
-                <p className="text-gray-400 text-sm">Question {currentQuestion + 1} of {mcqs.length}</p>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold truncate">{contestInfo?.title || 'MCQ Section'}</h1>
+                <p className="text-gray-400 text-xs sm:text-sm">Question {currentQuestion + 1} of {mcqs.length}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-lg font-bold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-mono text-sm sm:text-lg font-bold ${remainingTime < 300 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-700 text-white'
                 }`}>
-                <Clock className="w-5 h-5" />
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>{formattedTime}</span>
               </div>
 
               <button
                 onClick={handleSaveAndBackToHub}
-                className="btn-secondary"
+                className="btn-secondary hidden sm:inline-flex"
               >
                 Save & Back to Hub
               </button>
