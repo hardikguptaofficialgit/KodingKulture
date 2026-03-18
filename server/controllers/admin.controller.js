@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Contest from '../models/Contest.js';
-import { sendMail } from '../services/emailService.js';
+import { renderEmailTemplate, sendMail } from '../services/emailService.js';
 import { sendToUser } from '../services/sseManager.js';
 
 // @desc    Get all users
@@ -100,18 +100,20 @@ export const updateUserRole = async (req, res) => {
                 await sendMail({
                     to: user.email,
                     subject: 'You are now an Organiser on FAKT CHECK!',
-                    html: `
-            <h2>Congratulations, ${user.name}!</h2>
-            <p>You have been granted <strong>Organiser</strong> privileges on FAKT CHECK.</p>
-            <p>You can now:</p>
-            <ul>
-              <li>Create and manage your own contests</li>
-              <li>View leaderboards for your contests</li>
-              <li>Access participant data for your contests</li>
-            </ul>
-            <p>Note: Your contests will require admin approval before they go live.</p>
-            <p>Best regards,<br>FAKT CHECK Team</p>
-          `
+                    html: renderEmailTemplate({
+                        preheader: 'Your organiser access is now active on FAKT CHECK.',
+                        eyebrow: 'Role Update',
+                        title: 'Your organiser access is ready',
+                        intro: `Hello ${user.name}, your account has been upgraded with organiser permissions on FAKT CHECK.`,
+                        infoRows: [
+                            { label: 'Create', value: 'Set up and manage your own contests' },
+                            { label: 'Review', value: 'Access contest leaderboards and participant data' },
+                            { label: 'Publish', value: 'Submit contests for admin approval before they go live' }
+                        ],
+                        ctaLabel: 'Open Dashboard',
+                        ctaUrl: `${process.env.CLIENT_URL}/admin/dashboard`,
+                        note: 'Your published contests will still require admin approval before participants can access them.',
+                    })
                 });
             }
         } catch (emailErr) {
@@ -197,20 +199,32 @@ export const verifyContest = async (req, res) => {
                 : `Your contest "${contest.title}" requires changes`;
 
             const html = status === 'APPROVED'
-                ? `
-          <h2>Contest Approved!</h2>
-          <p>Hi ${contest.createdBy.name},</p>
-          <p>Your contest <strong>"${contest.title}"</strong> has been approved and is now visible to participants.</p>
-          <p>Best regards,<br>FAKT CHECK Team</p>
-        `
-                : `
-          <h2>Contest Requires Changes</h2>
-          <p>Hi ${contest.createdBy.name},</p>
-          <p>Your contest <strong>"${contest.title}"</strong> has been reviewed and requires some changes.</p>
-          <p><strong>Reason:</strong> ${rejectionReason || 'No specific reason provided.'}</p>
-          <p>Please update your contest and resubmit for approval.</p>
-          <p>Best regards,<br>FAKT CHECK Team</p>
-        `;
+                ? renderEmailTemplate({
+                    preheader: `Your contest ${contest.title} has been approved.`,
+                    eyebrow: 'Contest Review',
+                    title: 'Your contest has been approved',
+                    intro: `Hello ${contest.createdBy.name}, your contest "${contest.title}" has been approved and is now ready for participants.`,
+                    infoRows: [
+                        { label: 'Contest', value: contest.title },
+                        { label: 'Status', value: 'Approved' }
+                    ],
+                    ctaLabel: 'View Contest',
+                    ctaUrl: `${process.env.CLIENT_URL}/contest/${contest._id}`,
+                })
+                : renderEmailTemplate({
+                    preheader: `Your contest ${contest.title} needs updates before approval.`,
+                    eyebrow: 'Contest Review',
+                    title: 'Your contest needs a few updates',
+                    intro: `Hello ${contest.createdBy.name}, we reviewed "${contest.title}" and it needs some changes before it can be approved.`,
+                    infoRows: [
+                        { label: 'Contest', value: contest.title },
+                        { label: 'Status', value: 'Changes requested' }
+                    ],
+                    note: `Reason: ${rejectionReason || 'No specific reason was provided.'}`,
+                    ctaLabel: 'Open Dashboard',
+                    ctaUrl: `${process.env.CLIENT_URL}/admin/dashboard`,
+                    footer: 'Once you update the contest, you can resubmit it for review from your dashboard.',
+                });
 
             await sendMail({
                 to: contest.createdBy.email,

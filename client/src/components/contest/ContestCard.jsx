@@ -1,85 +1,57 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, Users, Award, User } from 'lucide-react';
-import { formatDate } from '../../utils/formatTime';
 import { CONTEST_STATUS } from '../../utils/constants';
 
+const statusMap = {
+  [CONTEST_STATUS.LIVE]: { label: 'Live', className: 'badge-primary' },
+  [CONTEST_STATUS.UPCOMING]: { label: 'Upcoming', className: 'badge-neutral' },
+  [CONTEST_STATUS.ENDED]: { label: 'Ended', className: 'badge-neutral' },
+};
+
 const ContestCard = ({ contest }) => {
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case CONTEST_STATUS.LIVE:
-        return <span className="badge-success">🔴 LIVE</span>;
-      case CONTEST_STATUS.UPCOMING:
-        return <span className="badge-warning">🕒 UPCOMING</span>;
-      case CONTEST_STATUS.ENDED:
-        return <span className="badge-error">✓ ENDED</span>;
-      default:
-        return null;
-    }
-  };
+  const status = statusMap[contest.status];
 
   return (
-    <div className="card-hover group">
-      {/* Status Badge */}
-      <div className="flex justify-between items-start mb-4">
-        {getStatusBadge(contest.status)}
-        <span className="text-sm text-gray-400">
-          {contest.duration} mins
-        </span>
+    <article className="card-hover flex h-full flex-col">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        {status ? <span className={status.className}>{status.label}</span> : <span />}
+        <span className="text-sm text-dark-400">{contest.duration} mins</span>
       </div>
 
-      {/* Title */}
-      <h3 className="text-xl font-bold text-gray-100 mb-2 group-hover:text-primary-500 transition-colors">
-        {contest.title}
-      </h3>
+      <h3 className="text-xl font-semibold text-dark-50">{contest.title}</h3>
 
-      {/* Host Name */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-        <User className="w-3 h-3" />
+      <div className="mt-2 flex items-center gap-2 text-sm text-dark-400">
+        <User className="h-4 w-4" />
         <span>Hosted by {contest.createdBy?.name || 'Admin'}</span>
       </div>
 
-      {/* Description */}
-      <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+      <p className="mt-4 flex-1 text-sm leading-6 text-dark-300">
         {contest.description}
       </p>
 
-      {/* Info Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Calendar className="w-4 h-4 text-primary-500" />
+      <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-dark-300">
+        <div className="surface-muted flex items-center gap-2 p-3">
+          <Calendar className="h-4 w-4 text-primary-500" />
           <span>{new Date(contest.startTime).toLocaleDateString()}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Clock className="w-4 h-4 text-green-500" />
+        <div className="surface-muted flex items-center gap-2 p-3">
+          <Clock className="h-4 w-4 text-primary-500" />
           <span>{new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Calendar className="w-4 h-4 text-red-400" />
-          <span>{new Date(contest.endTime).toLocaleDateString()}</span>
+        <div className="surface-muted flex items-center gap-2 p-3">
+          <Users className="h-4 w-4 text-primary-500" />
+          <span>{contest.participants?.length || 0} joined</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Clock className="w-4 h-4 text-red-400" />
-          <span>{new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Users className="w-4 h-4 text-primary-500" />
-          <span>{contest.participants?.length || 0} participants</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-400">
-          <Award className="w-4 h-4 text-primary-500" />
+        <div className="surface-muted flex items-center gap-2 p-3">
+          <Award className="h-4 w-4 text-primary-500" />
           <span>{(contest.sections?.mcq?.totalMarks || 0) + (contest.sections?.coding?.totalMarks || 0)} pts</span>
         </div>
       </div>
 
-      {/* Action Button */}
-      <Link
-        to={`/contest/${contest._id}`}
-        className="block w-full btn-primary text-center"
-      >
-        {contest.status === CONTEST_STATUS.LIVE ? 'Enter Contest' : 'View Details'}
+      <Link to={`/contest/${contest._id}`} className="btn-primary mt-5 w-full">
+        {contest.status === CONTEST_STATUS.LIVE ? 'Enter contest' : 'View details'}
       </Link>
-    </div>
+    </article>
   );
 };
 

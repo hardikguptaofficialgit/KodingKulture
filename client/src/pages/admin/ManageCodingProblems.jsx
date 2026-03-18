@@ -835,7 +835,7 @@ const ManageCodingProblems = () => {
                     key={problem._id}
                     onClick={() => toggleLibrarySelection(problem._id)}
                     className={`p-4 rounded-lg border cursor-pointer transition-all ${selectedLibraryProblems.includes(problem._id)
-                      ? 'border-primary-500 bg-primary-500/10'
+                      ? 'border-primary-500  '
                       : 'border-dark-600 hover:border-dark-500'
                       }`}
                   >

@@ -5,7 +5,7 @@ import leaderboardService from '../../services/leaderboardService';
 import api from '../../services/authService';
 import Loader from '../../components/common/Loader';
 import {
-  Trophy, Medal, Award, TrendingUp, ChevronDown, ChevronUp,
+  Trophy, Medal, TrendingUp, ChevronDown, ChevronUp,
   ArrowLeft, FileText, Code, Timer, Clock, Shield, Users, ClipboardList, Download,
   CheckCircle, XCircle, Eye
 } from 'lucide-react';
@@ -89,17 +89,57 @@ const Leaderboard = () => {
     }
   };
 
-  const getRankIcon = (rank) => {
-    switch (rank) {
-      case 1:
-        return <Trophy className="w-6 h-6 text-yellow-500" />;
-      case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
-      case 3:
-        return <Award className="w-6 h-6 text-orange-600" />;
-      default:
-        return <span className="w-6 h-6 flex items-center justify-center text-gray-500 font-bold">{rank}</span>;
+  const getRankBadge = (rank) => {
+    if (rank === 1) {
+      return (
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full border shadow-[0_0_0_1px_rgba(255,255,255,0.02)]"
+          style={{
+            borderColor: 'rgb(249 179 43 / 0.45)',
+            background: 'radial-gradient(circle at 30% 30%, rgb(249 179 43 / 0.16), rgb(249 179 43 / 0.05) 48%, transparent 78%)',
+            boxShadow: 'inset 0 0 24px rgb(249 179 43 / 0.08), 0 0 28px rgb(249 179 43 / 0.08)',
+          }}
+        >
+          <Trophy className="h-6 w-6 text-yellow-400" />
+        </div>
+      );
     }
+
+    if (rank === 2) {
+      return (
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full border shadow-[0_0_0_1px_rgba(255,255,255,0.02)]"
+          style={{
+            borderColor: 'rgb(148 163 184 / 0.42)',
+            background: 'radial-gradient(circle at 30% 30%, rgb(148 163 184 / 0.15), rgb(148 163 184 / 0.05) 48%, transparent 78%)',
+            boxShadow: 'inset 0 0 24px rgb(148 163 184 / 0.08), 0 0 24px rgb(148 163 184 / 0.06)',
+          }}
+        >
+          <Medal className="h-6 w-6 text-slate-300" />
+        </div>
+      );
+    }
+
+    if (rank === 3) {
+      return (
+        <div
+          className="flex h-14 w-14 items-center justify-center rounded-full border shadow-[0_0_0_1px_rgba(255,255,255,0.02)]"
+          style={{
+            borderColor: 'rgb(249 115 22 / 0.45)',
+            background: 'radial-gradient(circle at 30% 30%, rgb(249 115 22 / 0.16), rgb(249 115 22 / 0.05) 48%, transparent 78%)',
+            boxShadow: 'inset 0 0 24px rgb(249 115 22 / 0.08), 0 0 24px rgb(249 115 22 / 0.07)',
+          }}
+        >
+          <Medal className="h-6 w-6 text-orange-400" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex h-12 min-w-12 items-center justify-center rounded-full border border-white/8 bg-white/5 px-3 text-sm font-semibold text-gray-300">
+        #{rank}
+      </div>
+    );
   };
 
   // Export leaderboard to CSV
@@ -229,7 +269,7 @@ const Leaderboard = () => {
 
         {/* Admin Hint */}
         {isAdminOrOrganiser && (
-          <div className="mb-4 p-3 bg-primary-500/10 border border-primary-500/30 rounded-lg text-sm text-primary-400">
+          <div className="mb-4 p-3   border border-primary-500/30 rounded-lg text-sm text-primary-400">
             <TrendingUp className="w-4 h-4 inline mr-2" />
             Click on any participant row to view detailed time breakdown per question and section
           </div>
@@ -267,7 +307,7 @@ const Leaderboard = () => {
                       >
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            {getRankIcon(entry.rank)}
+                            {getRankBadge(entry.rank)}
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
@@ -615,9 +655,9 @@ const Leaderboard = () => {
 
         {/* Legend */}
         <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-400">
-          <span className="flex items-center gap-1"><Trophy className="w-4 h-4 text-yellow-500" /> Gold</span>
-          <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-gray-400" /> Silver</span>
-          <span className="flex items-center gap-1"><Award className="w-4 h-4 text-orange-600" /> Bronze</span>
+          <span className="flex items-center gap-1"><Trophy className="w-4 h-4 text-yellow-500" /> 1st place</span>
+          <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-gray-400" /> 2nd place</span>
+          <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-orange-500" /> 3rd place</span>
         </div>
       </div>
     </div >

@@ -51,14 +51,14 @@ const ResetPassword = () => {
 
     if (error && !success) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+            <div className="page-shell flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md">
                     <div className="card p-8 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
                             <XCircle className="w-8 h-8 text-red-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Invalid Link</h1>
-                        <p className="text-gray-400 mb-6">{error}</p>
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Invalid Link</h1>
+                        <p className="text-muted-ui mb-6">{error}</p>
                         <Link
                             to="/forgot-password"
                             className="btn-primary w-full py-3 inline-flex items-center justify-center gap-2"
@@ -73,14 +73,14 @@ const ResetPassword = () => {
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+            <div className="page-shell flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md">
                     <div className="card p-8 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
                             <CheckCircle className="w-8 h-8 text-green-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Password Reset!</h1>
-                        <p className="text-gray-400 mb-6">
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Password Reset!</h1>
+                        <p className="text-muted-ui mb-6">
                             Your password has been reset successfully. You can now login with your new password.
                         </p>
                         <Link
@@ -96,7 +96,7 @@ const ResetPassword = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+        <div className="page-shell flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
                 <div className="card p-8">
                     {/* Header */}
@@ -104,8 +104,8 @@ const ResetPassword = () => {
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/20 flex items-center justify-center">
                             <Lock className="w-8 h-8 text-primary-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
-                        <p className="text-gray-400">
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Reset Password</h1>
+                        <p className="text-muted-ui">
                             Enter your new password below.
                         </p>
                     </div>
@@ -113,7 +113,7 @@ const ResetPassword = () => {
                     {/* Form */}
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="label mb-2 block">
                                 New Password
                             </label>
                             <div className="relative">
@@ -129,7 +129,7 @@ const ResetPassword = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                    className="text-soft-ui hover:text-strong absolute right-3 top-1/2 -translate-y-1/2"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
@@ -137,7 +137,7 @@ const ResetPassword = () => {
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="label mb-2 block">
                                 Confirm Password
                             </label>
                             <div className="relative">
@@ -152,7 +152,7 @@ const ResetPassword = () => {
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirm(!showConfirm)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                    className="text-soft-ui hover:text-strong absolute right-3 top-1/2 -translate-y-1/2"
                                 >
                                     {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>

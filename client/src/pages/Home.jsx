@@ -1,241 +1,381 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
-import { Code2, Trophy, Users, Award, ArrowRight, Zap, Target, Medal } from 'lucide-react';
+import { ArrowRight, Award, Code2, FileText, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-// Animated counter component
-const AnimatedCounter = ({ target, suffix = '', duration = 2000 }) => {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const counterRef = useRef(null);
+const metrics = [
+  { value: '50+', label: 'weekly contests' },
+  { value: '500+', label: 'active participants' },
+  { value: '1000+', label: 'problems attempted' },
+];
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
+const features = [
+  {
+    icon: Code2,
+    title: 'Robust Coding Assessments',
+    description: 'Multi-language support for algorithmic problem-solving with automated test case evaluation and real-time execution limits.',
+  },
+  {
+    icon: FileText,
+    title: 'Comprehensive MCQ Engine',
+    description: 'Run objective aptitude, logic, and core subject rounds seamlessly alongside practical coding challenges.',
+  },
+  {
+    icon: Trophy,
+    title: 'Real-time Leaderboards',
+    description: 'Track participant progress live. Detailed post-contest analysis, submission metrics, and global ranking updates.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Advanced Proctoring',
+    description: 'Ensure fair play with secure execution environments, tab-switching detection, and strict anti-cheat mechanisms.',
+  },
+  {
+    icon: Users,
+    title: 'Public & Private Rounds',
+    description: 'Host exclusive private contests for specific institutions or open public challenges for the wider developer community.',
+  },
+  {
+    icon: Award,
+    title: 'Certificates & Editorials',
+    description: 'Provide participants with verifiable achievement certificates and detailed problem editorials to encourage continuous learning.',
+  },
+];
 
-    if (counterRef.current) {
-      observer.observe(counterRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [isVisible]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-
-    let startTime;
-    const step = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(easeOutQuart * target));
-
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      }
-    };
-
-    requestAnimationFrame(step);
-  }, [isVisible, target, duration]);
-
-  return (
-    <span ref={counterRef}>
-      {count}{suffix}
-    </span>
-  );
-};
+const platformColumns = [
+  {
+    title: 'Participants',
+    description: 'Compete in timed rounds, track your rank live, and build confidence through consistent practice.',
+    stat: 'Live ranking',
+  },
+  {
+    title: 'Organizers',
+    description: 'Publish coding and MCQ rounds, manage test cases, and evaluate submissions without manual friction.',
+    stat: 'Fast setup',
+  },
+  {
+    title: 'Institutions',
+    description: 'Run placement drives, internal screenings, and campus contests with controlled access and reliable proctoring.',
+    stat: 'Private rooms',
+  },
+];
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-500/10 to-transparent pointer-events-none"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-          <div className="text-center space-y-8 animate-slideIn">
-            <div className="inline-block">
-              <div className="bg-primary-500/10 border border-primary-500/30 rounded-full px-4 py-2 inline-flex items-center gap-2 mb-6">
-                <Zap className="w-4 h-4 text-primary-500" />
-                <span className="text-primary-500 text-sm font-semibold">Weekly Coding Contests</span>
-              </div>
+    <div className="page-shell relative overflow-hidden pt-0">
+      {/* Custom Animation Styles for Background Blobs */}
+      <style>{`
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+          animation: blob 8s infinite ease-in-out;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
+
+      {/* Global Background Effects */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div
+          className="absolute inset-x-0 top-0 h-[400px] [background-size:64px_64px] opacity-[0.06]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgb(var(--color-text) / 0.08) 1px, transparent 1px),
+              linear-gradient(to bottom, rgb(var(--color-text) / 0.08) 1px, transparent 1px)
+            `,
+          }}
+        />
+      </div>
+
+      {/* Main Content Container */}
+      <div className="section-shell relative mx-auto max-w-7xl space-y-12 px-6 pb-12 sm:space-y-16 lg:px-8">
+        
+        {/* HERO SECTION */}
+        <div className="relative mt-2 overflow-hidden rounded-[2.5rem] px-6 py-8 sm:px-10 sm:py-12 lg:px-16 lg:py-16">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <img
+              src="/assets/herobg.png"
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.3] sm:opacity-[0.38]"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `
+                  linear-gradient(180deg, rgb(var(--color-page) / 0.42), rgb(var(--color-page) / 0.14) 24%, rgb(var(--color-page) / 0.54) 100%),
+                  radial-gradient(circle at top left, rgba(202,78,39,0.22), transparent 30%),
+                  linear-gradient(135deg, rgb(var(--color-panel) / 0.54) 0%, rgb(var(--color-panel-muted) / 0.28) 48%, rgb(var(--color-page) / 0.52) 100%)
+                `,
+              }}
+            />
+          </div>
+
+          <section className="relative z-10 mx-auto max-w-4xl space-y-8 text-center">
+            <div className="space-y-5">
+              <h1 className="font-display text-strong mx-auto max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+                Turn coding contests into a sharper, cleaner, more competitive experience.
+              </h1>
+              <p className="text-muted-ui mx-auto max-w-2xl text-lg leading-relaxed sm:text-xl">
+                Run weekly challenges, timed hiring rounds, and structured assessments.
+              </p>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              <span className="text-white">Kompete. Kode.</span>
-              <br />
-              <span className="gradient-text">Konquer.</span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto">
-              Join weekly coding contests, solve challenging problems, and climb the leaderboard.
-              Test your skills in MCQs and coding challenges.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-              <Link to="/contests" className="btn-primary text-lg px-8 py-4 flex items-center gap-2 glow-effect">
-                Browse Contests
-                <ArrowRight className="w-5 h-5" />
+            <div className="flex flex-wrap justify-center gap-4 pt-4">
+              <Link to="/contests" className="btn-primary inline-flex items-center px-8 py-4 text-base font-medium">
+                Browse contests
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               {!isAuthenticated && (
-                <Link to="/register" className="btn-outline text-lg px-8 py-4">
-                  Get Started Free
+                <Link
+                  to="/register"
+                  className="btn-secondary inline-flex items-center border-none px-8 py-4 text-base font-medium transition-colors hover:bg-opacity-80"
+                  style={{
+                    backgroundColor: 'rgb(var(--color-panel-muted) / 0.72)',
+                  }}
+                >
+                  Create account
                 </Link>
               )}
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-2xl mx-auto mt-12 sm:mt-16 pt-12 sm:pt-16 border-t border-dark-800">
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-500 mb-2">
-                  <AnimatedCounter target={500} suffix="+" duration={2000} />
+            <div className="flex flex-wrap justify-center gap-6 pt-6 sm:gap-10">
+              {metrics.map((metric) => (
+                <div key={metric.label} className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-strong sm:text-4xl">{metric.value}</span>
+                  <span className="text-muted-ui text-xs uppercase tracking-[0.15em]">{metric.label}</span>
                 </div>
-                <div className="text-gray-400 text-sm">Active Users</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-500 mb-2">
-                  <AnimatedCounter target={50} suffix="+" duration={1500} />
-                </div>
-                <div className="text-gray-400 text-sm">Contests</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary-500 mb-2">
-                  <AnimatedCounter target={1000} suffix="+" duration={2500} />
-                </div>
-                <div className="text-gray-400 text-sm">Problems Solved</div>
-              </div>
+              ))}
             </div>
-          </div>
+          </section>
         </div>
-      </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-dark-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Why Choose Our Platform?</h2>
-            <p className="text-xl text-gray-400">Everything you need to excel in competitive programming</p>
+        {/* FLOWCHART ECOSYSTEM SECTION */}
+        <section className="relative mt-12 flex flex-col items-center pt-12 sm:mt-16">
+          
+          {/* Animated Background Blobs */}
+          <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden">
+            <div className="animate-blob absolute left-[10%] top-0 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl sm:h-80 sm:w-80" />
+            <div className="animate-blob animation-delay-2000 absolute right-[10%] top-12 h-64 w-64 rounded-full bg-amber-500/10 blur-3xl sm:h-72 sm:w-72" />
+            <div className="animate-blob animation-delay-4000 absolute bottom-0 left-[40%] h-64 w-64 rounded-full bg-rose-500/10 blur-3xl sm:h-72 sm:w-72" />
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Code2 className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">Multi-Language Support</h3>
-              <p className="text-gray-400">
-                Code in your preferred language - C, C++, Java, Python, JavaScript and more.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Trophy className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">Real-time Leaderboards</h3>
-              <p className="text-gray-400">
-                Track your performance and compete with others on live leaderboards.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Target className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">MCQ & Aptitude Tests</h3>
-              <p className="text-gray-400">
-                Test your theoretical knowledge with timed MCQ sections and aptitude tests.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Medal className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">Certificates</h3>
-              <p className="text-gray-400">
-                Earn verifiable certificates for your achievements and top rankings.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Zap className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">Instant Evaluation</h3>
-              <p className="text-gray-400">
-                Get immediate feedback on your submissions with detailed test case results.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="card-hover group">
-              <div className="bg-primary-500/10 p-4 rounded-xl w-fit mb-4 group-hover:bg-primary-500 transition-colors duration-300">
-                <Users className="w-8 h-8 text-primary-500 group-hover:text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">Community Driven</h3>
-              <p className="text-gray-400">
-                Join a vibrant community of coders and learn from each other.
-              </p>
-            </div>
+          {/* Top Level Node */}
+          <div
+            className="z-10 rounded-2xl px-8 py-4 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)] backdrop-blur-md"
+            style={{
+              border: '1px solid rgb(var(--color-border) / 0.55)',
+              backgroundColor: 'rgb(var(--color-panel) / 0.45)',
+            }}
+          >
+            <h3 className="font-display text-strong text-xl font-semibold tracking-wide">Platform Ecosystem</h3>
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section - Only show for non-authenticated users */}
-      {!isAuthenticated && (
-        <section className="py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="card glow-effect">
-              <Award className="w-16 h-16 text-primary-500 mx-auto mb-6" />
-              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Ready to Start?</h2>
-              <p className="text-xl text-gray-400 mb-8">
-                Join thousands of developers competing in weekly contests
-              </p>
-              <Link to="/register" className="btn-primary text-lg px-8 py-4 inline-flex items-center gap-2">
-                Create Free Account
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
+     {/* Connection Lines (Desktop) */}
+<div className="pointer-events-none relative hidden h-12 w-full sm:block">
+  <div
+    className="absolute left-1/2 top-0 h-6 w-[2px] -translate-x-1/2"
+    style={{
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+  <div
+    className="absolute left-[16.66%] right-[16.66%] top-6"
+    style={{
+      height: '2px',
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+  <div
+    className="absolute left-[16.66%] top-6 h-6 w-[2px] -translate-x-1/2"
+    style={{
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+  <div
+    className="absolute left-1/2 top-6 h-6 w-[2px] -translate-x-1/2"
+    style={{
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+  <div
+    className="absolute right-[16.66%] top-6 h-6 w-[2px] translate-x-1/2"
+    style={{
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+</div>
+
+{/* Connection Lines (Mobile) */}
+<div className="pointer-events-none relative block h-8 w-full sm:hidden">
+  <div
+    className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2"
+    style={{
+      backgroundColor: 'rgb(var(--color-border) / 0.85)',
+      boxShadow: '0 0 6px rgb(var(--color-border) / 0.4)',
+    }}
+  />
+</div>
+          {/* Children Nodes */}
+          <div className="z-10 grid w-full gap-6 sm:grid-cols-3">
+            {platformColumns.map(({ title, description, stat }) => (
+              <div
+                key={title}
+                className="relative flex flex-col items-center overflow-hidden rounded-[1.5rem] p-6 text-center shadow-sm backdrop-blur-sm"
+                style={{
+                  border: '1px solid rgb(var(--color-border) / 0.55)',
+                  backgroundColor: 'rgb(var(--color-panel-muted) / 0.45)',
+                }}
+              >
+                <span
+                  className="mb-4 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-ui"
+                  style={{
+                    border: '1px solid rgb(var(--color-border) / 0.55)',
+                    backgroundColor: 'rgb(var(--color-panel-muted) / 0.72)',
+                  }}
+                >
+                  {stat}
+                </span>
+                <div className="font-display text-strong mb-2 text-lg font-medium">{title}</div>
+                <div className="text-muted-ui text-sm leading-relaxed">{description}</div>
+              </div>
+            ))}
           </div>
         </section>
-      )}
 
-      {/* CTA Section - For authenticated users */}
-      {isAuthenticated && (
-        <section className="py-20">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="card glow-effect">
-              <Trophy className="w-16 h-16 text-primary-500 mx-auto mb-6" />
-              <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">Ready to Compete?</h2>
-              <p className="text-xl text-gray-400 mb-8">
-                Browse upcoming contests and test your skills
+        {/* FEATURES SECTION CONTAINER */}
+        <div className="relative mt-8 overflow-hidden rounded-[2.5rem] px-4 py-8 sm:px-8 sm:py-16">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <img
+              src="/assets/herobg.png"
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `
+                  linear-gradient(180deg, rgb(var(--color-page) / 0.68), rgb(var(--color-page) / 0.42) 42%, rgb(var(--color-page) / 0.74) 100%),
+                  linear-gradient(135deg, rgb(var(--color-panel) / 0.38) 0%, rgb(var(--color-panel-muted) / 0.18) 48%, rgb(var(--color-page) / 0.38) 100%)
+                `,
+              }}
+            />
+          </div>
+
+          {/* Centered Features Heading */}
+          <div className="relative z-10 mb-12 text-center">
+            <h2 className="font-display text-strong text-3xl font-semibold sm:text-4xl">
+              Powerful features for every stage
+            </h2>
+            <p className="text-muted-ui mx-auto mt-4 max-w-2xl text-base sm:text-lg">
+              Everything you need to host, manage, and evaluate competitive coding and objective rounds with ease.
+            </p>
+          </div>
+
+          {/* Feature Grid */}
+          <section className="relative z-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {features.map(({ icon: Icon, title, description }) => (
+              <article
+                key={title}
+                className="group relative overflow-hidden rounded-[1.5rem] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.04)] backdrop-blur transition-colors duration-300 hover:bg-opacity-100 sm:p-8"
+                style={{
+                  border: '1px solid rgb(var(--color-border) / 0.55)',
+                  backgroundColor: 'rgb(var(--color-panel-muted) / 0.82)',
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-80"
+                  style={{
+                    background: 'linear-gradient(180deg, rgb(var(--color-text) / 0.03), transparent 35%, rgb(var(--color-text) / 0.01) 100%)',
+                  }}
+                />
+                <div className="absolute right-[-3rem] top-[-3rem] h-28 w-28 rounded-full bg-primary-500/8 blur-2xl" />
+                
+                {/* ICON & ANIMATED BORDER */}
+                <div className="relative mb-6 inline-flex h-14 w-14 items-center justify-center rounded-full text-orange-500">
+                  <svg
+                    className="absolute inset-0 h-full w-full transition-transform duration-700 ease-in-out group-hover:rotate-[180deg]"
+                    viewBox="0 0 100 100"
+                  >
+                    <path
+                      d="M50 5 
+                         C75 5, 95 25, 95 50 
+                         C95 75, 75 95, 50 95 
+                         C25 95, 5 75, 5 50 
+                         C5 25, 25 5, 50 5 Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray="6 8"
+                      className="text-orange-300 opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+                    />
+                  </svg>
+                  <Icon className="relative z-10 h-6 w-6 text-orange-500 transition-colors duration-300 group-hover:text-orange-400" />
+                </div>
+
+                <h2 className="font-display text-strong text-xl font-semibold">{title}</h2>
+                <p className="text-muted-ui mt-3 text-sm leading-relaxed sm:text-base">{description}</p>
+              </article>
+            ))}
+          </section>
+        </div>
+
+        {/* BOTTOM CTA SECTION */}
+        <section
+          className="relative overflow-hidden rounded-[2rem] px-6 py-12 text-center shadow-[0_20px_80px_rgba(0,0,0,0.08)] sm:px-12 sm:py-20"
+          style={{
+            border: '1px solid rgb(var(--color-border) / 0.65)',
+            backgroundColor: 'rgb(var(--color-panel-muted) / 0.88)',
+          }}
+        >
+          <img
+            src="/assets/herobg.png"
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
+          />
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: 'linear-gradient(90deg, rgb(var(--color-page) / 0.5) 0%, rgb(var(--color-page) / 0.32) 48%, rgb(var(--color-page) / 0.16) 100%)',
+            }}
+          />
+          <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center gap-8">
+            <div>
+              <h2 className="font-display text-strong text-3xl font-semibold sm:text-4xl">
+                {isAuthenticated ? 'Ready for your next challenge?' : 'Everything is set up for your first contest.'}
+              </h2>
+              <p className="text-muted-ui mx-auto mt-4 text-lg leading-relaxed">
+                Join thousands of developers assessing their abilities, learning new concepts, and proving their algorithmic prowess in highly competitive weekly rounds.
               </p>
-              <Link to="/contests" className="btn-primary text-lg px-8 py-4 inline-flex items-center gap-2">
-                View Contests
-                <ArrowRight className="w-5 h-5" />
-              </Link>
             </div>
+            <Link
+              to={isAuthenticated ? '/contests' : '/register'}
+              className="btn-primary inline-flex shrink-0 items-center justify-center px-8 py-4 text-base font-medium"
+            >
+              {isAuthenticated ? 'Open contests' : 'Get started'}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
         </section>
-      )}
+
+      </div>
     </div>
   );
 };
 
 export default Home;
-

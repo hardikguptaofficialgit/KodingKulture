@@ -4,11 +4,11 @@
     margin: 0 auto;
 }
 
-.page-header {
+.verify-contests .page-header {
     margin-bottom: 2rem;
 }
 
-.page-header h1 {
+.verify-contests .page-header h1 {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -16,7 +16,7 @@
     color: #fff;
 }
 
-.page-header p {
+.verify-contests .page-header p {
     color: rgba(255, 255, 255, 0.6);
     margin-top: 0.5rem;
 }

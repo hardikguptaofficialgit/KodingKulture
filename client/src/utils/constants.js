@@ -27,9 +27,9 @@ export const LANGUAGES = [
 ];
 
 export const DIFFICULTY_COLORS = {
-  EASY: 'text-green-400',
-  MEDIUM: 'text-yellow-400',
-  HARD: 'text-red-400'
+  EASY: 'text-primary-500',
+  MEDIUM: 'text-dark-200',
+  HARD: 'text-dark-400'
 };
 
 export const DEFAULT_CODE = {

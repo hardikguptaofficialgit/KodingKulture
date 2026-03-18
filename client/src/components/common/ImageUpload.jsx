@@ -107,7 +107,7 @@ const ImageUpload = ({ imageUrl, onImageChange, onImageRemove }) => {
                     className={`
             border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
             ${dragActive
-                            ? 'border-primary-500 bg-primary-500/10'
+                            ? 'border-primary-500  '
                             : 'border-dark-600 hover:border-dark-500 bg-dark-800'
                         }
             ${uploading ? 'pointer-events-none opacity-50' : ''}

@@ -198,14 +198,7 @@ const ProctoredContest = ({ children, sectionType = 'mcq' }) => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading section...</p>
-        </div>
-      </div>
-    );
+    return <Loader fullScreen label="Loading contest section..." />;
   }
 
   return (
@@ -219,6 +212,11 @@ const ProctoredContest = ({ children, sectionType = 'mcq' }) => {
 
 
 function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('kk-theme') || 'dark';
+    document.documentElement.classList.toggle('theme-light', savedTheme === 'light');
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />
@@ -228,20 +226,20 @@ function App() {
           toastOptions={{
             duration: 3000,
             style: {
-              background: '#1e293b',
-              color: '#f1f5f9',
-              border: '1px solid #334155',
+              background: 'rgb(var(--color-panel))',
+              color: 'rgb(var(--color-text))',
+              border: '1px solid rgb(var(--color-border))',
             },
             success: {
               iconTheme: {
                 primary: '#FF6B35',
-                secondary: '#fff',
+                secondary: '#000',
               },
             },
             error: {
               iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+                primary: '#FF6B35',
+                secondary: '#000',
               },
             },
           }}

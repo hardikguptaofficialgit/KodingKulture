@@ -11,8 +11,6 @@ const UserDashboard = () => {
   const { user, updateUser } = useAuth();
   const [myContests, setMyContests] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Edit profile state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -60,14 +58,13 @@ const UserDashboard = () => {
       const response = await api.put('/auth/profile', editForm);
 
       if (response.data.success) {
-        // Update user in context and localStorage
         updateUser({
           ...user,
           name: response.data.user.name,
           college: response.data.user.college,
           phone: response.data.user.phone
         });
-        toast.success('Profile updated successfully!');
+        toast.success('Profile updated successfully');
         setShowEditModal(false);
       }
     } catch (error) {
@@ -77,180 +74,125 @@ const UserDashboard = () => {
     }
   };
 
-  if (loading) {
-    return <Loader fullScreen />;
-  }
+  if (loading) return <Loader fullScreen />;
+
+  const stats = [
+    { icon: Calendar, label: 'Contests joined', value: myContests.length },
+    { icon: Target, label: 'Total score', value: user?.totalScore || 0 },
+    { icon: Trophy, label: 'Global rank', value: user?.rank || 'N/A' },
+  ];
 
   return (
-    <div className="min-h-screen bg-dark-950 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile Header */}
-        <div className="card mb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            <div className="bg-gradient-to-br from-primary-500 to-primary-600 p-4 sm:p-6 rounded-2xl">
-              <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+    <div className="page-shell">
+      <div className="section-shell space-y-6">
+        <section className="card">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl    ">
+                <User className="h-8 w-8 text-primary-500" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-dark-50">{user?.name}</h1>
+                <p className="text-sm text-dark-300">{user?.email}</p>
+                {user?.college && <p className="mt-1 text-sm text-dark-400">{user.college}</p>}
+              </div>
             </div>
-            <div className="flex-1 text-center sm:text-left min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 truncate">{user?.name}</h1>
-              <p className="text-gray-400 text-sm sm:text-base truncate">{user?.email}</p>
-              {user?.college && (
-                <p className="text-gray-500 text-sm mt-1 truncate">{user.college}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary-500/20 text-primary-400 rounded-lg hover:bg-primary-500/30 transition-colors border border-primary-500/30 text-sm"
-              >
-                <Edit className="w-4 h-4" />
-                <span className="hidden sm:inline">Edit Profile</span>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="badge-primary">{user?.role}</span>
+              <button onClick={() => setShowEditModal(true)} className="btn-secondary">
+                <Edit className="h-4 w-4" />
+                Edit profile
               </button>
-              <div className="text-right">
-                <div className="text-xs sm:text-sm text-gray-400 mb-1">Role</div>
-                <span className="badge-primary text-sm sm:text-lg">{user?.role}</span>
-              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="card">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary-500/10 p-4 rounded-xl">
-                <Calendar className="w-8 h-8 text-primary-500" />
+        <section className="grid gap-4 md:grid-cols-3">
+          {stats.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="card">
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl    ">
+                <Icon className="h-5 w-5 text-primary-500" />
               </div>
-              <div>
-                <div className="text-2xl font-bold text-white">{myContests.length}</div>
-                <div className="text-gray-400 text-sm">Contests Joined</div>
-              </div>
+              <div className="text-sm text-dark-300">{label}</div>
+              <div className="mt-1 text-2xl font-bold text-dark-50">{value}</div>
             </div>
+          ))}
+        </section>
+
+        <section>
+          <div className="page-header">
+            <h2 className="page-title">My contests</h2>
+            <p className="page-subtitle">Everything you have joined, in a single compact list.</p>
           </div>
 
-          <div className="card">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary-500/10 p-4 rounded-xl">
-                <Target className="w-8 h-8 text-primary-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-white">{user?.totalScore || 0}</div>
-                <div className="text-gray-400 text-sm">Total Score</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center gap-4">
-              <div className="bg-primary-500/10 p-4 rounded-xl">
-                <Trophy className="w-8 h-8 text-primary-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-white">{user?.rank || 'N/A'}</div>
-                <div className="text-gray-400 text-sm">Global Rank</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* My Contests */}
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-6">My Contests</h2>
           {myContests.length === 0 ? (
-            <div className="card text-center py-12">
-              <p className="text-gray-400 mb-4">You haven't joined any contests yet.</p>
-              <a
-                href="/contests"
-                className="btn-primary inline-block"
-              >
-                Browse Contests
-              </a>
+            <div className="card py-12 text-center">
+              <p className="text-dark-300">You haven't joined any contests yet.</p>
+              <a href="/contests" className="btn-primary mt-4 inline-flex">Browse contests</a>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myContests.map(contest => (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {myContests.map((contest) => (
                 <ContestCard key={contest._id} contest={contest} />
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {/* Edit Profile Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-800 rounded-xl w-full max-w-md border border-dark-700">
-            <div className="flex items-center justify-between p-6 border-b border-dark-700">
-              <h3 className="text-xl font-bold text-white">Edit Profile</h3>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="card w-full max-w-md">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-dark-50">Edit profile</h3>
+              <button onClick={() => setShowEditModal(false)} className="btn-icon">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleEditProfile} className="p-6 space-y-5">
+            <form onSubmit={handleEditProfile} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Name *
-                </label>
+                <label className="label">Name</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
+                  className="input-field"
                   placeholder="Your name"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  College
-                </label>
+                <label className="label">College</label>
                 <input
                   type="text"
                   value={editForm.college}
                   onChange={(e) => setEditForm({ ...editForm, college: e.target.value })}
-                  className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
-                  placeholder="Your college/university"
+                  className="input-field"
+                  placeholder="Your college or university"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Phone
-                </label>
+                <label className="label">Phone</label>
                 <input
                   type="tel"
                   value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full bg-dark-700 border border-dark-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
+                  className="input-field"
                   placeholder="Your phone number"
                 />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-colors"
-                >
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowEditModal(false)} className="btn-secondary flex-1">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>Saving...</>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </>
-                  )}
+                <button type="submit" disabled={saving} className="btn-primary flex-1">
+                  <Save className="h-4 w-4" />
+                  {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>

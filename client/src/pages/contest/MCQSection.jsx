@@ -408,7 +408,7 @@ const MCQSection = () => {
                       key={index}
                       onClick={() => handleOptionSelect(currentMCQ._id, index)}
                       className={`w-full text-left p-4 rounded-lg border-2 transition-all ${isSelected
-                        ? 'border-primary-500 bg-primary-500/10'
+                        ? 'border-primary-500  '
                         : 'border-dark-600 bg-dark-700/50 hover:border-dark-500'
                         }`}
                     >

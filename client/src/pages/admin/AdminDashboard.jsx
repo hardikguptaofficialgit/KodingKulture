@@ -25,9 +25,8 @@ import {
 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { user, isAdmin, isAdminOrOrganiser } = useAuth();
+  const { isAdmin, isAdminOrOrganiser } = useAuth();
   const navigate = useNavigate();
-
   const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -48,14 +47,13 @@ const AdminDashboard = () => {
 
   const fetchContests = async () => {
     try {
-      // Use admin endpoint which filters by owner for organisers
       const response = await api.get('/contests/admin');
       setContests(response.data.contests);
       setStats(response.data.stats);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching contests:', error);
       toast.error('Failed to load contests');
+    } finally {
       setLoading(false);
     }
   };
@@ -77,11 +75,7 @@ const AdminDashboard = () => {
 
   const handleEndContest = async (contestId, contestTitle) => {
     const confirmed = window.confirm(
-      `⚠️ END CONTEST: "${contestTitle}"\n\n` +
-      `This will:\n` +
-      `• Set the contest end time to NOW\n` +
-      `• Auto-submit all active participants with their current progress\n\n` +
-      `This action CANNOT be undone. Are you sure?`
+      `End contest "${contestTitle}" now? This will submit all active participants with their current progress.`
     );
 
     if (!confirmed) return;
@@ -96,24 +90,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'LIVE':
-        return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'UPCOMING':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      case 'ENDED':
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
-    }
-  };
-
   const getContestStatus = (contest) => {
     const now = new Date();
     const startTime = new Date(contest.startTime);
     const endTime = new Date(contest.endTime);
-
     if (now < startTime) return 'UPCOMING';
     if (now >= startTime && now <= endTime) return 'LIVE';
     return 'ENDED';
@@ -121,370 +101,185 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      <div className="page-shell flex items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-dark-700 border-t-primary-500"></div>
       </div>
     );
   }
 
+  const statCards = [
+    { icon: Trophy, label: 'Total contests', value: stats.totalContests },
+    { icon: Calendar, label: 'Live contests', value: stats.liveContests },
+    { icon: Clock, label: 'Upcoming contests', value: stats.upcomingContests },
+    { icon: Users, label: 'Participants', value: stats.totalParticipants },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 py-8">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-xl sm:text-3xl font-bold mb-2">
-              {isAdmin ? 'Admin Dashboard' : 'Organiser Dashboard'}
-            </h1>
-            <p className="text-gray-400">Manage contests, MCQs, and coding problems</p>
+    <div className="page-shell">
+      <div className="section-shell space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="page-header mb-0">
+            <h1 className="page-title">{isAdmin ? 'Admin dashboard' : 'Organiser dashboard'}</h1>
+            <p className="page-subtitle">Manage contests, question banks, participants, and reviews from one place.</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
             {isAdmin && (
               <>
-                <button
-                  onClick={() => navigate('/admin/users')}
-                  className="btn-secondary flex items-center"
-                >
-                  <UserCheck className="w-5 h-5 mr-2" />
-                  Manage Users
+                <button onClick={() => navigate('/admin/users')} className="btn-secondary">
+                  <UserCheck className="h-4 w-4" />
+                  Users
                 </button>
-                <button
-                  onClick={() => navigate('/admin/verify-contests')}
-                  className="btn-secondary flex items-center"
-                >
-                  <Clock className="w-5 h-5 mr-2" />
-                  Pending Approvals
+                <button onClick={() => navigate('/admin/verify-contests')} className="btn-secondary">
+                  <Clock className="h-4 w-4" />
+                  Approvals
                 </button>
               </>
             )}
-            <button
-              onClick={() => navigate('/admin/contest/create')}
-              className="btn-primary"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Contest
+            <button onClick={() => navigate('/admin/contest/create')} className="btn-primary">
+              <Plus className="h-4 w-4" />
+              Create contest
             </button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Total Contests</p>
-                <p className="text-3xl font-bold">{stats.totalContests}</p>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {statCards.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="card">
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl    ">
+                <Icon className="h-5 w-5 text-primary-500" />
               </div>
-              <div className="w-12 h-12 bg-primary-500/20 rounded-lg flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-primary-400" />
-              </div>
+              <div className="text-sm text-dark-300">{label}</div>
+              <div className="mt-1 text-2xl font-bold text-dark-50">{value}</div>
             </div>
-          </div>
+          ))}
+        </section>
 
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Live Contests</p>
-                <p className="text-3xl font-bold text-green-400">{stats.liveContests}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Upcoming</p>
-                <p className="text-3xl font-bold text-blue-400">{stats.upcomingContests}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm mb-1">Total Participants</p>
-                <p className="text-3xl font-bold text-purple-400">{stats.totalParticipants}</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-purple-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contests Table */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold">All Contests</h2>
-          </div>
-
-          {contests.length === 0 ? (
-            <div className="text-center py-12">
-              <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 mb-4">No contests created yet</p>
-              <button
-                onClick={() => navigate('/admin/contest/create')}
-                className="btn-primary"
-              >
-                Create Your First Contest
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-dark-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Contest</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Host</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Start - End</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Duration</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Participants</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Room</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold">Sections</th>
-                    <th className="text-right py-3 px-4 text-gray-400 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contests.map((contest) => (
-                    <tr key={contest._id} className="border-b border-dark-700 hover:bg-dark-700/30">
-                      <td className="py-4 px-4">
-                        <div>
-                          <p className="font-semibold text-white">{contest.title}</p>
-                          <p className="text-sm text-gray-400 line-clamp-1">{contest.description}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className="text-gray-300 text-sm">{contest.createdBy?.name || 'Admin'}</span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col gap-1">
-                          <span className={`badge border ${getStatusColor(contest.status)}`}>
-                            {contest.status}
-                          </span>
-                          {contest.verificationStatus === 'PENDING' && (
-                            <span className="badge border bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
-                              PENDING
-                            </span>
-                          )}
-                          {contest.verificationStatus === 'REJECTED' && (
-                            <span className="badge border bg-red-500/20 text-red-400 border-red-500/50">
-                              REJECTED
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-300">
-                        <div className="text-xs">
-                          <div>{new Date(contest.startTime).toLocaleDateString()} {new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                          <div className="text-gray-500">to</div>
-                          <div>{new Date(contest.endTime).toLocaleDateString()} {new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-300">
-                        {contest.duration} min
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-white font-semibold">
-                            {contest.participants?.length || 0}
-                          </span>
-                          {contest.maxParticipants && (
-                            <span className="text-gray-400">/ {contest.maxParticipants}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        {contest.roomId ? (
-                          <Link
-                            to={`/rooms/${contest.roomId._id}`}
-                            className="flex flex-col items-start gap-0.5 hover:opacity-80 transition-opacity"
-                          >
-                            <span className="flex items-center gap-1 text-primary-400">
-                              <DoorOpen className="w-4 h-4" />
-                            </span>
-                            <span className="text-primary-400 text-xs underline">
-                              {contest.roomId.name || 'Room'}
-                            </span>
-                          </Link>
-                        ) : (
-                          <span className="flex flex-col items-start gap-0.5">
-                            <span className="flex items-center gap-1 text-green-400">
-                              <Globe className="w-4 h-4" />
-                            </span>
-                            <span className="text-green-400 text-xs">Public</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex gap-2">
-                          {contest.sections?.mcq?.enabled && (
-                            <span className="badge-info text-xs">
-                              <FileQuestion className="w-3 h-3 inline mr-1" />
-                              MCQ
-                            </span>
-                          )}
-                          {contest.sections?.coding?.enabled && (
-                            <span className="badge-success text-xs">
-                              <Code className="w-3 h-3 inline mr-1" />
-                              Coding
-                            </span>
-                          )}
-                          {contest.sections?.forms?.enabled && (
-                            <span className="bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded text-xs">
-                              <ClipboardList className="w-3 h-3 inline mr-1" />
-                              Forms
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => navigate(`/contest/${contest._id}`)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4 text-blue-400" />
+        <section className="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>Contest</th>
+                <th>Status</th>
+                <th>Schedule</th>
+                <th>Participants</th>
+                <th>Access</th>
+                <th>Sections</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contests.map((contest) => (
+                <tr key={contest._id}>
+                  <td>
+                    <div className="space-y-1">
+                      <div className="font-semibold text-dark-50">{contest.title}</div>
+                      <div className="text-xs text-dark-400">{contest.createdBy?.name || 'Admin'}</div>
+                      <div className="max-w-xs text-xs text-dark-300">{contest.description}</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex flex-col gap-2">
+                      <span className={contest.status === 'LIVE' ? 'badge-primary' : 'badge-neutral'}>{contest.status}</span>
+                      {contest.verificationStatus && <span className="badge-neutral">{contest.verificationStatus}</span>}
+                    </div>
+                  </td>
+                  <td className="text-dark-300">
+                    <div>{new Date(contest.startTime).toLocaleDateString()}</div>
+                    <div className="text-xs text-dark-400">{new Date(contest.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="mt-2">{new Date(contest.endTime).toLocaleDateString()}</div>
+                    <div className="text-xs text-dark-400">{new Date(contest.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </td>
+                  <td>
+                    <div className="font-semibold text-dark-50">{contest.participants?.length || 0}</div>
+                    {contest.maxParticipants && <div className="text-xs text-dark-400">max {contest.maxParticipants}</div>}
+                  </td>
+                  <td>
+                    {contest.roomId ? (
+                      <Link to={`/rooms/${contest.roomId._id}`} className="inline-flex items-center gap-2 text-primary-500 hover:text-primary-400">
+                        <DoorOpen className="h-4 w-4" />
+                        {contest.roomId.name || 'Room'}
+                      </Link>
+                    ) : (
+                      <span className="inline-flex items-center gap-2 text-dark-300">
+                        <Globe className="h-4 w-4 text-primary-500" />
+                        Public
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex flex-wrap gap-2">
+                      {contest.sections?.mcq?.enabled && <span className="badge-neutral">MCQ</span>}
+                      {contest.sections?.coding?.enabled && <span className="badge-neutral">Coding</span>}
+                      {contest.sections?.forms?.enabled && <span className="badge-neutral">Forms</span>}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => navigate(`/contest/${contest._id}`)} className="btn-icon" title="View">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => navigate(`/leaderboard/${contest._id}`)} className="btn-icon" title="Leaderboard">
+                        <BarChart3 className="h-4 w-4" />
+                      </button>
+                      {getContestStatus(contest) === 'LIVE' && (
+                        <button onClick={() => handleEndContest(contest._id, contest.title)} className="btn-icon" title="End contest">
+                          <StopCircle className="h-4 w-4" />
+                        </button>
+                      )}
+                      {contest.sections?.mcq?.enabled && (
+                        <button onClick={() => navigate(`/admin/contest/mcq/${contest._id}`)} className="btn-icon" title="Manage MCQs">
+                          <FileQuestion className="h-4 w-4" />
+                        </button>
+                      )}
+                      {contest.sections?.coding?.enabled && (
+                        <button onClick={() => navigate(`/admin/contest/coding/${contest._id}`)} className="btn-icon" title="Manage coding">
+                          <Code className="h-4 w-4" />
+                        </button>
+                      )}
+                      {contest.sections?.forms?.enabled && (
+                        <>
+                          <button onClick={() => navigate(`/admin/contest/forms/${contest._id}`)} className="btn-icon" title="Manage forms">
+                            <ClipboardList className="h-4 w-4" />
                           </button>
-
-                          <button
-                            onClick={() => navigate(`/leaderboard/${contest._id}`)}
-                            className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                            title="Leaderboard"
-                          >
-                            <BarChart3 className="w-4 h-4 text-green-400" />
-                          </button>
-
-                          {/* End Contest button - only show for LIVE contests */}
-                          {getContestStatus(contest) === 'LIVE' && (
-                            <button
-                              onClick={() => handleEndContest(contest._id, contest.title)}
-                              className="p-2 hover:bg-red-600/20 rounded-lg transition-colors"
-                              title="End Contest Now"
-                            >
-                              <StopCircle className="w-4 h-4 text-red-400" />
+                          {(getContestStatus(contest) === 'LIVE' || getContestStatus(contest) === 'ENDED') && (
+                            <button onClick={() => navigate(`/admin/contest/evaluate/${contest._id}`)} className="btn-icon" title="Evaluate forms">
+                              <CheckSquare className="h-4 w-4" />
                             </button>
                           )}
+                        </>
+                      )}
+                      <button onClick={() => navigate(`/admin/contest/edit/${contest._id}`)} className="btn-icon" title="Edit">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDeleteContest(contest._id)} className="btn-icon" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
 
-                          {/* MCQ button - only show if MCQ section is enabled */}
-                          {contest.sections?.mcq?.enabled && (
-                            <button
-                              onClick={() => navigate(`/admin/contest/mcq/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              title="Manage MCQs"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
-                            >
-                              <FileQuestion className="w-4 h-4 text-purple-400" />
-                            </button>
-                          )}
-
-                          {/* Coding button - only show if Coding section is enabled */}
-                          {contest.sections?.coding?.enabled && (
-                            <button
-                              onClick={() => navigate(`/admin/contest/coding/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              title="Manage Coding Problems"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
-                            >
-                              <Code className="w-4 h-4 text-orange-400" />
-                            </button>
-                          )}
-
-                          {/* Forms button - only show if Forms section is enabled */}
-                          {contest.sections?.forms?.enabled && (
-                            <button
-                              onClick={() => navigate(`/admin/contest/forms/${contest._id}`)}
-                              className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              title="Manage Forms"
-                              disabled={!isAdmin && contest.verificationStatus === 'APPROVED' && !contest.roomId}
-                            >
-                              <ClipboardList className="w-4 h-4 text-cyan-400" />
-                            </button>
-                          )}
-
-                          {/* Evaluate Forms button - show if Forms enabled and contest has ended or is live */}
-                          {contest.sections?.forms?.enabled && (getContestStatus(contest) === 'LIVE' || getContestStatus(contest) === 'ENDED') && (
-                            <button
-                              onClick={() => navigate(`/admin/contest/evaluate/${contest._id}`)}
-                              className="p-2 hover:bg-dark-600 rounded-lg transition-colors"
-                              title="Evaluate Form Submissions"
-                            >
-                              <CheckSquare className="w-4 h-4 text-emerald-400" />
-                            </button>
-                          )}
-
-                          {/* Edit button - disabled for organisers on approved contests */}
-                          <button
-                            onClick={() => navigate(`/admin/contest/edit/${contest._id}`)}
-                            className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            title={!isAdmin && contest.verificationStatus === 'APPROVED' ? 'Locked - Contest Approved' : 'Edit'}
-                            disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
-                          >
-                            <Edit className="w-4 h-4 text-yellow-400" />
-                          </button>
-
-                          {/* Delete button - disabled for organisers on approved contests */}
-                          <button
-                            onClick={() => handleDeleteContest(contest._id)}
-                            className={`p-2 hover:bg-dark-600 rounded-lg transition-colors ${!isAdmin && contest.verificationStatus === 'APPROVED' ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
-                            title={!isAdmin && contest.verificationStatus === 'APPROVED' ? 'Locked - Contest Approved' : 'Delete'}
-                            disabled={!isAdmin && contest.verificationStatus === 'APPROVED'}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-400" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <button
-            onClick={() => navigate('/admin/contest/create')}
-            className="card hover:border-primary-500 transition-colors text-left"
-          >
-            <Trophy className="w-8 h-8 text-primary-400 mb-3" />
-            <h3 className="text-lg font-bold mb-2">Create Contest</h3>
-            <p className="text-gray-400 text-sm">Set up a new coding contest with MCQs and problems</p>
+        <section className="grid gap-4 md:grid-cols-3">
+          <button onClick={() => navigate('/admin/contest/create')} className="card-hover text-left">
+            <Trophy className="mb-4 h-6 w-6 text-primary-500" />
+            <h2 className="text-lg font-semibold text-dark-50">Create contest</h2>
+            <p className="mt-2 text-sm text-dark-300">Build a new round with coding, MCQ, and forms sections.</p>
           </button>
-
-          <button
-            onClick={() => navigate('/admin/mcq-library')}
-            className="card hover:border-purple-500 transition-colors text-left"
-          >
-            <FileQuestion className="w-8 h-8 text-purple-400 mb-3" />
-            <h3 className="text-lg font-bold mb-2">MCQ Library</h3>
-            <p className="text-gray-400 text-sm">Manage reusable MCQ questions with categories</p>
+          <button onClick={() => navigate('/admin/mcq-library')} className="card-hover text-left">
+            <FileQuestion className="mb-4 h-6 w-6 text-primary-500" />
+            <h2 className="text-lg font-semibold text-dark-50">MCQ library</h2>
+            <p className="mt-2 text-sm text-dark-300">Maintain reusable question banks in the same theme.</p>
           </button>
-
-          <button
-            onClick={() => navigate('/admin/coding-library')}
-            className="card hover:border-orange-500 transition-colors text-left"
-          >
-            <Code className="w-8 h-8 text-orange-400 mb-3" />
-            <h3 className="text-lg font-bold mb-2">Coding Library</h3>
-            <p className="text-gray-400 text-sm">Manage reusable coding problems with test cases</p>
+          <button onClick={() => navigate('/admin/coding-library')} className="card-hover text-left">
+            <Code className="mb-4 h-6 w-6 text-primary-500" />
+            <h2 className="text-lg font-semibold text-dark-50">Coding library</h2>
+            <p className="mt-2 text-sm text-dark-300">Manage reusable programming problems and test cases.</p>
           </button>
-        </div>
+        </section>
       </div>
     </div>
   );

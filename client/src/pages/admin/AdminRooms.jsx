@@ -168,14 +168,14 @@ const AdminRooms = () => {
                                                         setSelectedRoom(room);
                                                         setShowAddModal(true);
                                                     }}
-                                                    className="p-2 text-gray-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-lg"
+                                                    className="p-2 text-gray-400 hover:text-primary-400 hover:  rounded-lg"
                                                     title="Add Member"
                                                 >
                                                     <UserPlus className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => navigate(`/rooms/${room._id}`)}
-                                                    className="p-2 text-gray-400 hover:text-primary-400 hover:bg-primary-500/10 rounded-lg"
+                                                    className="p-2 text-gray-400 hover:text-primary-400 hover:  rounded-lg"
                                                     title="View Details"
                                                 >
                                                     <ChevronRight className="w-4 h-4" />

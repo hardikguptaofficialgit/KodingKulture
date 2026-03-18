@@ -655,7 +655,7 @@ const ManageMCQ = () => {
                     key={mcq._id}
                     onClick={() => toggleLibrarySelection(mcq._id)}
                     className={`p-4 rounded-lg border cursor-pointer transition-all ${selectedLibraryMcqs.includes(mcq._id)
-                      ? 'border-primary-500 bg-primary-500/10'
+                      ? 'border-primary-500  '
                       : 'border-dark-600 hover:border-dark-500'
                       }`}
                   >

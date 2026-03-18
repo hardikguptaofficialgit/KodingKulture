@@ -98,7 +98,7 @@ const CreateRoom = () => {
                         </div>
 
                         {/* Info Box */}
-                        <div className="bg-primary-500/10 border border-primary-500/20 rounded-lg p-4">
+                        <div className="    rounded-lg p-4">
                             <h4 className="text-primary-400 font-medium mb-2">What happens next?</h4>
                             <ul className="text-sm text-gray-400 space-y-1">
                                 <li>• A unique room code will be generated</li>

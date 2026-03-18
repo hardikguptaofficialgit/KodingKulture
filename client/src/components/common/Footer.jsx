@@ -1,55 +1,93 @@
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Award } from 'lucide-react';
+import BrandMark from './BrandMark';
 
 const Footer = () => {
   return (
-    <footer className="bg-dark-900 border-t border-dark-800 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* About */}
-          <div>
-            <h3 className="text-lg font-bold mb-3">
-              <span className="text-primary-500">FAKT</span>
-              <span className="text-white"> CHECK</span>
-            </h3>
-            <p className="text-gray-400 text-sm">
-              A professional platform for weekly coding contests, MCQ tests, and skill assessments.
-              Kompete, Kode, and Konquer with us!
-            </p>
-          </div>
+    <footer className="mt-auto border-t" style={{ borderColor: 'rgb(var(--color-border) / 0.8)' }}>
+      <div className="section-shell py-8 sm:py-10">
+        <div
+          className="overflow-hidden rounded-[2rem] border px-5 py-6 sm:px-7 sm:py-8"
+          style={{
+            borderColor: 'rgb(var(--color-border) / 0.9)',
+            background:
+              'radial-gradient(circle at top left, rgb(var(--color-accent-200) / 0.16), transparent 28%), linear-gradient(135deg, rgb(var(--color-panel)) 0%, rgb(var(--color-panel-muted)) 100%)',
+            boxShadow: '0 22px 60px rgb(15 23 42 / 0.06)',
+          }}
+        >
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-xl space-y-5">
+              <div className="flex items-center gap-4">
+               
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-3">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><a href="/contests" className="text-gray-400 hover:text-primary-500 text-sm transition-colors">Browse Contests</a></li>
-              <li><a href="/leaderboard" className="text-gray-400 hover:text-primary-500 text-sm transition-colors">Leaderboard</a></li>
-              <li><a href="/about" className="text-gray-400 hover:text-primary-500 text-sm transition-colors">About Us</a></li>
-              <li><a href="/contact" className="text-gray-400 hover:text-primary-500 text-sm transition-colors">Contact</a></li>
-            </ul>
-          </div>
+                <div>
+                  <div className="brand-wordmark text-base uppercase">
+                    <span className="text-primary-500">Fakt</span>
+                    <span className="text-strong">Check</span>
+                  </div>
+                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-soft-ui">
+                    Contest Platform
+                  </p>
+                </div>
+              </div>
 
-          {/* Social */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-3">Connect With Us</h3>
-            <div className="flex space-x-4">
-              <a href="#" className="bg-dark-800 p-2 rounded-lg hover:bg-primary-500 transition-colors duration-200">
-                <Github className="w-5 h-5" />
-              </a>
-              <a href="#" className="bg-dark-800 p-2 rounded-lg hover:bg-primary-500 transition-colors duration-200">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="bg-dark-800 p-2 rounded-lg hover:bg-primary-500 transition-colors duration-200">
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a href="#" className="bg-dark-800 p-2 rounded-lg hover:bg-primary-500 transition-colors duration-200">
-                <Mail className="w-5 h-5" />
-              </a>
+              <div className="space-y-3">
+                <p className="max-w-lg text-sm leading-7 text-muted-ui sm:text-[0.95rem]">
+                  Run coding rounds, MCQ screenings, form-based assessments, and leaderboard-driven evaluations
+                  from one focused workspace.
+                </p>
+
+            
+              </div>
+            </div>
+
+            <div className="grid gap-8 sm:grid-cols-2 lg:min-w-[420px] lg:gap-12">
+              <div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-soft-ui">
+                  Explore
+                </p>
+                <div className="grid gap-2.5 text-sm">
+                  <Link to="/contests" className="nav-link inline-flex items-center gap-2">
+                    Contests
+                  </Link>
+                  <Link to="/leaderboard" className="nav-link inline-flex items-center gap-2">
+                    Leaderboards
+                  </Link>
+                  <Link to="/dashboard" className="nav-link inline-flex items-center gap-2">
+                    Dashboard
+                  </Link>
+                  <Link to="/rooms" className="nav-link inline-flex items-center gap-2">
+                    Rooms
+                  </Link>
+                </div>
+              </div>
+
+              <div>
+             
+                <div className="space-y-3">
+                  <a
+                    href="https://fedkiit.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-center gap-2 text-sm text-muted-ui transition-colors hover:text-strong"
+                  >
+                    Visit FED KIIT
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </a>
+                
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="border-t border-dark-800 mt-8 pt-6 text-center text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} FAKT CHECK. All rights reserved.</p>
+          <div
+            className="mt-8 flex flex-col gap-3  pt-5 text-xs sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="text-soft-ui">
+              © {new Date().getFullYear()} Fakt Check.
+            </div>
+          
+          </div>
         </div>
       </div>
     </footer>

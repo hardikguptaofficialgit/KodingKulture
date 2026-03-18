@@ -5,89 +5,81 @@ import { Trophy, ChevronRight, Calendar, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const LeaderboardList = () => {
-    const navigate = useNavigate();
-    const [contests, setContests] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [contests, setContests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchContests();
-    }, []);
+  useEffect(() => {
+    fetchContests();
+  }, []);
 
-    const fetchContests = async () => {
-        try {
-            const response = await api.get('/contests');
-            // Filter to only show contests that have ended or are ongoing
-            const now = new Date();
-            const relevantContests = (response.data.contests || []).filter(c => {
-                const endTime = new Date(c.endTime);
-                return endTime <= now || c.status === 'COMPLETED';
-            });
-            setContests(relevantContests);
-        } catch (error) {
-            console.error('Error fetching contests:', error);
-            toast.error('Failed to load contests');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-            </div>
-        );
+  const fetchContests = async () => {
+    try {
+      const response = await api.get('/contests');
+      const now = new Date();
+      const relevantContests = (response.data.contests || []).filter((contest) => {
+        const endTime = new Date(contest.endTime);
+        return endTime <= now || contest.status === 'COMPLETED';
+      });
+      setContests(relevantContests);
+    } catch (error) {
+      console.error('Error fetching contests:', error);
+      toast.error('Failed to load contests');
+    } finally {
+      setLoading(false);
     }
+  };
 
+  if (loading) {
     return (
-        <div className="min-h-screen bg-dark-950 py-8">
-            <div className="max-w-4xl mx-auto px-4">
-                {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-white flex items-center justify-center gap-3 mb-2">
-                        <Trophy className="w-10 h-10 text-primary-500" />
-                        Leaderboards
-                    </h1>
-                    <p className="text-gray-400">Select a contest to view its leaderboard</p>
-                </div>
-
-                {/* Contest List */}
-                <div className="space-y-4">
-                    {contests.length === 0 ? (
-                        <div className="card text-center py-12">
-                            <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                            <p className="text-gray-400">No completed contests yet</p>
-                        </div>
-                    ) : (
-                        contests.map(contest => (
-                            <button
-                                key={contest._id}
-                                onClick={() => navigate(`/leaderboard/${contest._id}`)}
-                                className="w-full card hover:border-primary-500/50 transition-all text-left flex items-center justify-between group"
-                            >
-                                <div>
-                                    <h3 className="text-lg font-semibold text-white group-hover:text-primary-400 transition-colors">
-                                        {contest.title}
-                                    </h3>
-                                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="w-4 h-4" />
-                                            {new Date(contest.endTime).toLocaleDateString()}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <Users className="w-4 h-4" />
-                                            {contest.participants?.length || 0} participants
-                                        </span>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-primary-400 transition-colors" />
-                            </button>
-                        ))
-                    )}
-                </div>
-            </div>
-        </div>
+      <div className="page-shell flex items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-dark-700 border-t-primary-500"></div>
+      </div>
     );
+  }
+
+  return (
+    <div className="page-shell">
+      <div className="section-shell max-w-4xl">
+        <div className="page-header">
+          <h1 className="page-title">Leaderboards</h1>
+          <p className="page-subtitle">Select a completed contest to inspect rankings and scores.</p>
+        </div>
+
+        <div className="space-y-3">
+          {contests.length === 0 ? (
+            <div className="card py-12 text-center">
+              <Trophy className="mx-auto mb-4 h-10 w-10 text-soft-ui" />
+              <p className="text-muted-ui">No completed contests yet.</p>
+            </div>
+          ) : (
+            contests.map((contest) => (
+              <button
+                key={contest._id}
+                onClick={() => navigate(`/leaderboard/${contest._id}`)}
+                className="card-hover flex w-full items-center justify-between gap-4 text-left"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-strong">{contest.title}</h2>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-ui">
+                    <span className="inline-flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary-500" />
+                      {new Date(contest.endTime).toLocaleDateString()}
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary-500" />
+                      {contest.participants?.length || 0} participants
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-soft-ui" />
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default LeaderboardList;

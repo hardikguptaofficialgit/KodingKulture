@@ -127,7 +127,7 @@ const VerifyOTP = () => {
     }, [otp]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+        <div className="page-shell flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
                 <div className="card p-8">
                     {/* Header */}
@@ -135,8 +135,8 @@ const VerifyOTP = () => {
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/20 flex items-center justify-center">
                             <Mail className="w-8 h-8 text-primary-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Verify Your Email</h1>
-                        <p className="text-gray-400">
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Verify Your Email</h1>
+                        <p className="text-muted-ui">
                             We've sent a 6-digit code to<br />
                             <span className="text-primary-400 font-medium">{email}</span>
                         </p>
@@ -157,10 +157,14 @@ const VerifyOTP = () => {
                                 onPaste={handlePaste}
                                 className={`
                   w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 
-                  bg-dark-800 text-white transition-all
-                  ${digit ? 'border-primary-500' : 'border-dark-600'}
+                  transition-all text-strong
+                  ${digit ? 'border-primary-500' : ''}
                   focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20
                 `}
+                                style={{
+                                    backgroundColor: 'rgb(var(--color-panel-muted))',
+                                    borderColor: digit ? 'rgb(var(--color-accent-500))' : 'rgb(var(--color-border))'
+                                }}
                                 disabled={loading}
                             />
                         ))}
@@ -187,7 +191,7 @@ const VerifyOTP = () => {
 
                     {/* Resend */}
                     <div className="text-center">
-                        <p className="text-gray-400 text-sm mb-2">
+                        <p className="text-muted-ui mb-2 text-sm">
                             Didn't receive the code?
                         </p>
                         {canResend ? (
@@ -200,17 +204,17 @@ const VerifyOTP = () => {
                                 Resend OTP
                             </button>
                         ) : (
-                            <p className="text-gray-500 text-sm">
+                            <p className="text-soft-ui text-sm">
                                 Resend in <span className="text-primary-400 font-medium">{countdown}s</span>
                             </p>
                         )}
                     </div>
 
                     {/* Back to Register */}
-                    <div className="mt-6 pt-6 border-t border-dark-700 text-center">
+                    <div className="mt-6 border-t pt-6 text-center" style={{ borderColor: 'rgb(var(--color-border))' }}>
                         <Link
                             to="/register"
-                            className="text-gray-400 hover:text-white inline-flex items-center gap-1 text-sm"
+                            className="text-muted-ui hover:text-strong inline-flex items-center gap-1 text-sm"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back to Register

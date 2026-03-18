@@ -3,7 +3,7 @@ import Form from '../models/Form.js';
 import Contest from '../models/Contest.js';
 import User from '../models/User.js';
 import Result from '../models/Result.js';
-import { sendMail } from '../services/emailService.js';
+import { renderEmailTemplate, sendMail } from '../services/emailService.js';
 
 // @desc    Submit a form (participant)
 // @route   POST /api/form-submissions
@@ -257,21 +257,15 @@ export const evaluateSubmission = async (req, res) => {
                 await sendMail({
                     to: submission.userId.email,
                     subject: `Your Form Submission Has Been Reviewed - ${submission.formId.title}`,
-                    html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #1e293b; color: #f1f5f9; border-radius: 12px;">
-                <h2 style="color: #FF6B35;">🎉 Your Form Has Been Reviewed!</h2>
-                <p>Hello ${submission.userId.name},</p>
-                <p>Great news! Your form submission for <strong style="color: #22c55e;">${submission.formId.title}</strong> has been reviewed by the evaluator.</p>
-                <p>Log in to your account to view your detailed results and feedback.</p>
-                <div style="margin: 20px 0; text-align: center;">
-                  <a href="${process.env.CLIENT_URL}/contest/${submission.contestId}/review" 
-                     style="background: #FF6B35; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                    View Your Results
-                  </a>
-                </div>
-                <p style="color: #94a3b8; font-size: 12px;">Best of luck!</p>
-              </div>
-            `
+                    html: renderEmailTemplate({
+                        preheader: `Your submission for ${submission.formId.title} has been reviewed.`,
+                        eyebrow: 'Evaluation Update',
+                        title: 'Your form review is ready',
+                        intro: `Hello ${submission.userId.name}, your submission for "${submission.formId.title}" has been reviewed by the evaluator.`,
+                        ctaLabel: 'View Results',
+                        ctaUrl: `undefined/contest/${submission.contestId}/review`,
+                        note: 'Open your review page to see the score breakdown and any feedback left for you.',
+                    })
                 });
             } catch (emailError) {
                 console.error('Failed to send evaluation email:', emailError);

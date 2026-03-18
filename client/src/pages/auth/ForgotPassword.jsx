@@ -31,18 +31,18 @@ const ForgotPassword = () => {
 
     if (sent) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+            <div className="page-shell flex items-center justify-center px-4 py-12">
                 <div className="w-full max-w-md">
                     <div className="card p-8 text-center">
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
                             <CheckCircle className="w-8 h-8 text-green-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Check Your Email</h1>
-                        <p className="text-gray-400 mb-6">
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Check Your Email</h1>
+                        <p className="text-muted-ui mb-6">
                             If an account exists with <span className="text-primary-400">{email}</span>,
                             we've sent you a password reset link.
                         </p>
-                        <p className="text-gray-500 text-sm mb-6">
+                        <p className="text-soft-ui mb-6 text-sm">
                             The link will expire in 1 hour.
                         </p>
                         <Link
@@ -59,7 +59,7 @@ const ForgotPassword = () => {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-950">
+        <div className="page-shell flex items-center justify-center px-4 py-12">
             <div className="w-full max-w-md">
                 <div className="card p-8">
                     {/* Header */}
@@ -67,8 +67,8 @@ const ForgotPassword = () => {
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-500/20 flex items-center justify-center">
                             <Mail className="w-8 h-8 text-primary-500" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Forgot Password?</h1>
-                        <p className="text-gray-400">
+                        <h1 className="text-strong mb-2 text-2xl font-bold">Forgot Password?</h1>
+                        <p className="text-muted-ui">
                             Enter your email and we'll send you a link to reset your password.
                         </p>
                     </div>
@@ -76,7 +76,7 @@ const ForgotPassword = () => {
                     {/* Form */}
                     <form onSubmit={handleSubmit}>
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="label mb-2 block">
                                 Email Address
                             </label>
                             <input
@@ -112,7 +112,7 @@ const ForgotPassword = () => {
                     <div className="text-center">
                         <Link
                             to="/login"
-                            className="text-gray-400 hover:text-white inline-flex items-center gap-1 text-sm"
+                            className="text-muted-ui hover:text-strong inline-flex items-center gap-1 text-sm"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back to Login

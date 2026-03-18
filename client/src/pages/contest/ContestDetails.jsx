@@ -8,10 +8,16 @@ import { formatDate } from '../../utils/formatTime';
 import toast from 'react-hot-toast';
 import api from '../../services/authService';
 
+const statusClassMap = {
+  LIVE: 'badge-primary',
+  UPCOMING: 'badge-neutral',
+  ENDED: 'badge-neutral',
+};
+
 const ContestDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [contest, setContest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -20,7 +26,6 @@ const ContestDetails = () => {
   const [registrationStatus, setRegistrationStatus] = useState(null);
   const [countdown, setCountdown] = useState(null);
 
-  // Countdown timer effect
   useEffect(() => {
     if (!contest || contest.status !== 'UPCOMING') {
       setCountdown(null);
@@ -34,7 +39,6 @@ const ContestDetails = () => {
 
       if (diff <= 0) {
         setCountdown(null);
-        // Refetch contest to update status
         fetchContestDetails();
         return;
       }
@@ -43,13 +47,11 @@ const ContestDetails = () => {
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
       setCountdown({ days, hours, minutes, seconds });
     };
 
     calculateCountdown();
     const interval = setInterval(calculateCountdown, 1000);
-
     return () => clearInterval(interval);
   }, [contest]);
 
@@ -77,8 +79,7 @@ const ContestDetails = () => {
     try {
       const response = await api.get(`/contests/${id}/progress`);
       setUserProgress(response.data.progress);
-    } catch (error) {
-      // No progress means user hasn't started the contest
+    } catch {
       setUserProgress(null);
     }
   };
@@ -87,7 +88,7 @@ const ContestDetails = () => {
     try {
       const response = await api.get(`/contests/${id}/registration-status`);
       setRegistrationStatus(response.data);
-    } catch (error) {
+    } catch {
       setRegistrationStatus(null);
     }
   };
@@ -102,8 +103,7 @@ const ContestDetails = () => {
     try {
       setRegistering(true);
       await api.post(`/contests/${id}/register`);
-      toast.success('Successfully registered for contest!');
-      // Refresh registration status
+      toast.success('Successfully registered for contest');
       await fetchRegistrationStatus();
       await fetchContestDetails();
     } catch (error) {
@@ -124,240 +124,161 @@ const ContestDetails = () => {
     }
   };
 
-  if (loading) {
-    return <Loader fullScreen />;
-  }
+  if (loading) return <Loader fullScreen />;
 
   if (!contest) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
-        <div className="card text-center">
-          <p className="text-gray-400 text-lg">Contest not found</p>
-        </div>
+      <div className="page-shell flex items-center justify-center">
+        <div className="card text-center text-dark-300">Contest not found.</div>
       </div>
     );
   }
 
-  // Use registrationStatus from new API - simpler and more reliable
   const isRegistered = registrationStatus?.isRegistered || false;
-  const hasStarted = registrationStatus?.hasStarted || !!userProgress;
-
   const isLive = contest.status === 'LIVE';
   const isEnded = contest.status === 'ENDED';
 
+  const infoItems = [
+    { icon: Calendar, label: 'Start time', value: formatDate(contest.startTime) },
+    { icon: Calendar, label: 'End time', value: formatDate(contest.endTime) },
+    { icon: Clock, label: 'Duration', value: `${contest.duration} minutes` },
+    { icon: Users, label: 'Participants', value: `${contest.participants?.length || 0} registered` },
+    {
+      icon: Award,
+      label: 'Total marks',
+      value: `${(contest.sections.mcq?.totalMarks || 0) + (contest.sections.coding?.totalMarks || 0) + (contest.sections.forms?.totalMarks || 0)} points`
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-dark-950 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Status Badge */}
-        <div className="mb-6">
-          {contest.status === 'LIVE' && <span className="badge-success text-lg">🔴 LIVE NOW</span>}
-          {contest.status === 'UPCOMING' && <span className="badge-warning text-lg">🕒 UPCOMING</span>}
-          {contest.status === 'ENDED' && <span className="badge-error text-lg">✓ ENDED</span>}
+    <div className="page-shell">
+      <div className="section-shell max-w-5xl space-y-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className={statusClassMap[contest.status] || 'badge-neutral'}>{contest.status}</span>
+          <span className="text-sm text-dark-400">Hosted by {contest.createdBy?.name || 'Admin'}</span>
         </div>
 
-        {/* Title & Description */}
-        <div className="card mb-6">
-          <h1 className="text-2xl sm:text-4xl font-bold text-white mb-2">{contest.title}</h1>
-          <p className="text-sm text-gray-500 mb-4">Hosted by {contest.createdBy?.name || 'Admin'}</p>
-          <p className="text-gray-400 text-base sm:text-lg mb-6">{contest.description}</p>
-
-          {/* Info Grid - Row 1: Start/End Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
-              <Calendar className="w-6 h-6 text-green-500" />
-              <div>
-                <div className="text-sm text-gray-400">Start Time</div>
-                <div className="text-white font-semibold">{formatDate(contest.startTime)}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-dark-800 p-4 rounded-lg">
-              <Calendar className="w-6 h-6 text-red-400" />
-              <div>
-                <div className="text-sm text-gray-400">End Time</div>
-                <div className="text-white font-semibold">{formatDate(contest.endTime)}</div>
-              </div>
-            </div>
+        <section className="card space-y-6">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold text-dark-50 sm:text-4xl">{contest.title}</h1>
+            <p className="max-w-3xl text-sm leading-7 text-dark-300 sm:text-base">{contest.description}</p>
           </div>
 
-          {/* Info Grid - Row 2: Duration, Participants, Marks */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
-              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs sm:text-sm text-gray-400">Duration</div>
-                <div className="text-white font-semibold text-sm sm:text-base">{contest.duration} minutes</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
-              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs sm:text-sm text-gray-400">Participants</div>
-                <div className="text-white font-semibold text-sm sm:text-base">{contest.participants?.length || 0} registered</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-dark-800 p-3 sm:p-4 rounded-lg">
-              <Award className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs sm:text-sm text-gray-400">Total Marks</div>
-                <div className="text-white font-semibold text-sm sm:text-base">
-                  {(contest.sections.mcq?.totalMarks || 0) + (contest.sections.coding?.totalMarks || 0) + (contest.sections.forms?.totalMarks || 0)} points
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {infoItems.map(({ icon: Icon, label, value }) => (
+              <div key={label} className="surface-muted p-4">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl    ">
+                  <Icon className="h-5 w-5 text-primary-500" />
                 </div>
+                <div className="text-xs uppercase tracking-[0.12em] text-dark-400">{label}</div>
+                <div className="mt-1 text-sm font-semibold text-dark-50">{value}</div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Sections Preview - Flex layout for dynamic sizing */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          <div className="grid gap-3 md:grid-cols-3">
             {contest.sections.mcq?.enabled && (
-              <div className="flex-1 min-w-[200px] bg-dark-800 p-4 rounded-lg border border-dark-700 flex flex-col items-center justify-center text-center">
-                <div className="flex items-center gap-3 mb-2">
-                  <FileText className="w-6 h-6 text-primary-500" />
-                  <h3 className="text-lg font-semibold text-white">MCQ Section</h3>
+              <div className="surface-muted p-4">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl    ">
+                  <FileText className="h-5 w-5 text-primary-500" />
                 </div>
-                <p className="text-gray-400 text-sm">Marks: {contest.sections.mcq.totalMarks}</p>
+                <div className="font-semibold text-dark-50">MCQ section</div>
+                <div className="mt-1 text-sm text-dark-300">{contest.sections.mcq.totalMarks} marks</div>
               </div>
             )}
             {contest.sections.coding?.enabled && (
-              <div className="flex-1 min-w-[250px] bg-dark-800 p-4 rounded-lg border border-dark-700 flex flex-col items-center justify-center text-center">
-                <div className="flex items-center gap-3 mb-2">
-                  <Code2 className="w-6 h-6 text-primary-500" />
-                  <h3 className="text-lg font-semibold text-white">Coding Section</h3>
+              <div className="surface-muted p-4">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl    ">
+                  <Code2 className="h-5 w-5 text-primary-500" />
                 </div>
-                <p className="text-gray-400 text-sm">Marks: {contest.sections.coding.totalMarks}</p>
+                <div className="font-semibold text-dark-50">Coding section</div>
+                <div className="mt-1 text-sm text-dark-300">{contest.sections.coding.totalMarks} marks</div>
               </div>
             )}
             {contest.sections.forms?.enabled && (
-              <div className="flex-1 min-w-[250px] bg-dark-800 p-4 rounded-lg border border-dark-700 flex flex-col items-center justify-center text-center">
-                <div className="flex items-center gap-3 mb-2">
-                  <ClipboardList className="w-6 h-6 text-primary-500" />
-                  <h3 className="text-lg font-semibold text-white">Forms Section</h3>
+              <div className="surface-muted p-4">
+                <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl    ">
+                  <ClipboardList className="h-5 w-5 text-primary-500" />
                 </div>
-                <p className="text-gray-400 text-sm">Marks: {contest.sections.forms.totalMarks}</p>
+                <div className="font-semibold text-dark-50">Forms section</div>
+                <div className="mt-1 text-sm text-dark-300">{contest.sections.forms.totalMarks} marks</div>
               </div>
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 flex-wrap">
-            {/* Not registered yet */}
+          <div className="space-y-4">
             {!isRegistered && !isEnded && (
-              <button
-                onClick={handleRegister}
-                disabled={registering}
-                className="btn-primary flex-1 py-3 text-lg font-semibold"
-              >
-                {registering ? 'Registering...' : 'Register for Contest'}
+              <button onClick={handleRegister} disabled={registering} className="btn-primary w-full sm:w-auto">
+                {registering ? 'Registering...' : 'Register for contest'}
               </button>
             )}
 
-            {/* Registered but NOT submitted - show Start Contest */}
             {isRegistered && !isEnded && userProgress?.status !== 'SUBMITTED' && (
-              <div className="flex-1 flex flex-col gap-4">
-                <div className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="font-semibold">Registered</span>
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-primary-500">
+                  <CheckCircle className="h-4 w-4" />
+                  Registered
                 </div>
 
-                {/* Countdown timer for UPCOMING contests */}
                 {contest.status === 'UPCOMING' && countdown && (
-                  <div className="bg-gradient-to-r from-primary-500/20 to-blue-500/20 border border-primary-500/30 rounded-lg p-4">
-                    <p className="text-gray-300 text-sm mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Contest starts in:
-                    </p>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="bg-dark-800 rounded-lg p-2">
-                        <div className="text-2xl font-bold text-primary-400">{countdown.days}</div>
-                        <div className="text-xs text-gray-500">Days</div>
-                      </div>
-                      <div className="bg-dark-800 rounded-lg p-2">
-                        <div className="text-2xl font-bold text-primary-400">{String(countdown.hours).padStart(2, '0')}</div>
-                        <div className="text-xs text-gray-500">Hours</div>
-                      </div>
-                      <div className="bg-dark-800 rounded-lg p-2">
-                        <div className="text-2xl font-bold text-primary-400">{String(countdown.minutes).padStart(2, '0')}</div>
-                        <div className="text-xs text-gray-500">Minutes</div>
-                      </div>
-                      <div className="bg-dark-800 rounded-lg p-2">
-                        <div className="text-2xl font-bold text-primary-400 animate-pulse">{String(countdown.seconds).padStart(2, '0')}</div>
-                        <div className="text-xs text-gray-500">Seconds</div>
-                      </div>
+                  <div className="surface-muted p-4">
+                    <p className="mb-3 text-sm text-dark-300">Contest starts in</p>
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        ['Days', countdown.days],
+                        ['Hours', String(countdown.hours).padStart(2, '0')],
+                        ['Minutes', String(countdown.minutes).padStart(2, '0')],
+                        ['Seconds', String(countdown.seconds).padStart(2, '0')],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-xl border border-dark-700 bg-dark-950 p-3 text-center">
+                          <div className="text-xl font-bold text-primary-500">{value}</div>
+                          <div className="mt-1 text-xs uppercase tracking-[0.12em] text-dark-400">{label}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {isLive && (
-                  <button
-                    onClick={handleStartContest}
-                    disabled={starting}
-                    className="btn-primary py-3 text-lg font-semibold glow-effect flex items-center justify-center gap-2"
-                  >
-                    {starting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-5 h-5" />
-                        Start Contest
-                      </>
-                    )}
+                  <button onClick={handleStartContest} disabled={starting} className="btn-primary">
+                    <Play className="h-4 w-4" />
+                    {starting ? 'Starting...' : 'Start contest'}
                   </button>
                 )}
               </div>
             )}
 
-            {/* Submitted users - show View Details buttons */}
             {isRegistered && userProgress?.status === 'SUBMITTED' && (
-              <div className="flex-1 flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="font-semibold">Contest Submitted</span>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => navigate(`/leaderboard/${id}`)}
-                    className="btn-primary flex-1 py-3 text-lg font-semibold"
-                  >
-                    View Leaderboard
-                  </button>
-                  <button
-                    onClick={() => navigate(`/contest/${id}/review`)}
-                    className="btn-secondary flex-1 py-3 text-lg font-semibold"
-                  >
-                    Review Answers
-                  </button>
-                </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button onClick={() => navigate(`/leaderboard/${id}`)} className="btn-primary">
+                  View leaderboard
+                </button>
+                <button onClick={() => navigate(`/contest/${id}/review`)} className="btn-secondary">
+                  Review answers
+                </button>
               </div>
             )}
 
-            {/* Contest ended - show leaderboard */}
             {isEnded && !userProgress?.status && (
-              <button
-                onClick={() => navigate(`/leaderboard/${id}`)}
-                className="btn-primary flex-1 py-3 text-lg font-semibold"
-              >
-                View Leaderboard
+              <button onClick={() => navigate(`/leaderboard/${id}`)} className="btn-primary">
+                View leaderboard
               </button>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Rules */}
         {contest.rules && contest.rules.length > 0 && (
-          <div className="card">
-            <h2 className="text-2xl font-bold text-white mb-4">Contest Rules</h2>
-            <ul className="space-y-2">
+          <section className="card">
+            <h2 className="mb-4 text-xl font-semibold text-dark-50">Contest rules</h2>
+            <ul className="space-y-3 text-sm text-dark-300">
               {contest.rules.map((rule, index) => (
-                <li key={index} className="flex items-start gap-3 text-gray-400">
-                  <span className="text-primary-500 font-bold">{index + 1}.</span>
+                <li key={index} className="flex gap-3">
+                  <span className="text-primary-500">{String(index + 1).padStart(2, '0')}</span>
                   <span>{rule}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         )}
       </div>
     </div>
