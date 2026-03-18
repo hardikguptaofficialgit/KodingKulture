@@ -237,7 +237,7 @@ const CodingLibrary = () => {
                             : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
                             }`}
                     >
-                        🌐 Public Pool
+                    Public Pool
                         <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
                             {problems.filter(p => p.isPublic).length}
                         </span>

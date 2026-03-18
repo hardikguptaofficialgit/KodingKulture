@@ -1,15 +1,15 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
 
-dotenv.config();
+// Inline MongoDB URI
+const MONGO_URI = 'mongodb+srv://ritamvaskar0:ritam2005@cluster0.jrenkys.mongodb.net/';
 
 // Admin details
 const ADMIN_NAME = 'Admin User';
 const ADMIN_EMAIL = 'admin@kodingkulture.com';
 const ADMIN_PASSWORD = 'Admin@123';
 
-// User schema (simplified for this script)
+// User schema
 const userSchema = new mongoose.Schema({
     name: String,
     email: { type: String, unique: true },
@@ -26,29 +26,25 @@ const User = mongoose.model('User', userSchema);
 async function createAdmin() {
     try {
         // Connect to MongoDB
-        await mongoose.connect(process.env.MONGODB_URI);
+        await mongoose.connect(MONGO_URI);
         console.log('✅ Connected to MongoDB');
 
-        // Check if admin already exists
+        // Check if admin exists
         const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
-        if (existingAdmin) {
-            console.log('⚠️  Admin user already exists!');
-            console.log(`   Email: ${existingAdmin.email}`);
-            console.log(`   Role: ${existingAdmin.role}`);
 
-            // Update to ADMIN if not already
+        if (existingAdmin) {
+            console.log('⚠️ Admin already exists');
+
             if (existingAdmin.role !== 'ADMIN') {
                 existingAdmin.role = 'ADMIN';
                 await existingAdmin.save();
-                console.log('✅ Updated role to ADMIN');
+                console.log('✅ Role updated to ADMIN');
             }
         } else {
-            // Hash password
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, salt);
 
-            // Create admin user
-            const admin = await User.create({
+            await User.create({
                 name: ADMIN_NAME,
                 email: ADMIN_EMAIL,
                 password: hashedPassword,
@@ -57,17 +53,14 @@ async function createAdmin() {
                 phone: ''
             });
 
-            console.log('✅ Admin user created successfully!');
-            console.log('');
-            console.log('   📧 Email: ' + ADMIN_EMAIL);
-            console.log('   🔑 Password: ' + ADMIN_PASSWORD);
-            console.log('   👑 Role: ADMIN');
+            console.log('✅ Admin created');
+            console.log(`Email: ${ADMIN_EMAIL}`);
+            console.log(`Password: ${ADMIN_PASSWORD}`);
         }
 
         await mongoose.connection.close();
-        console.log('');
-        console.log('🎉 Done! You can now login with admin credentials.');
         process.exit(0);
+
     } catch (error) {
         console.error('❌ Error:', error.message);
         process.exit(1);

@@ -25,13 +25,24 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost:5173',
+  'https://faktcheck.fedkiit.com'
+].filter(Boolean);
+
 // ===========================================
 // SECURITY MIDDLEWARE (Order Matters!)
 // ===========================================
 
 // 1. CORS - must be before other middleware
 const corsOptions = {
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,7 +62,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", process.env.CLIENT_URL || 'http://localhost:5173'],
+      connectSrc: ["'self'", ...allowedOrigins],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"]
     }
