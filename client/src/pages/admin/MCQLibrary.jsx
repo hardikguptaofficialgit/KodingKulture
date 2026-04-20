@@ -12,7 +12,8 @@ import {
     CheckCircle,
     XCircle,
     BarChart3,
-    Tag
+    Tag,
+    AiBeautifyIcon
 } from 'lucide-react';
 
 const MCQ_CATEGORIES = ['GENERAL', 'APTITUDE', 'TECHNICAL', 'REASONING', 'ENTREPRENEURSHIP'];
@@ -26,6 +27,8 @@ const MCQLibrary = () => {
     const [editingMCQ, setEditingMCQ] = useState(null);
     const [filters, setFilters] = useState({ category: '', difficulty: '', search: '' });
     const [poolFilter, setPoolFilter] = useState('all'); // 'all' | 'public' | 'private'
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiLoading, setAiLoading] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -163,6 +166,92 @@ const MCQLibrary = () => {
         setFormData({ ...formData, options: newOptions });
     };
 
+    const applyMCQDraft = (mcq) => {
+        if (!mcq) return;
+        const options = Array.isArray(mcq.options) && mcq.options.length >= 4
+            ? mcq.options.slice(0, 4)
+            : [
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false }
+            ];
+
+        setFormData((prev) => ({
+            ...prev,
+            question: mcq.question || prev.question,
+            options,
+            category: mcq.category || prev.category,
+            difficulty: mcq.difficulty || prev.difficulty,
+            marks: Number.isFinite(mcq.marks) ? mcq.marks : prev.marks,
+            negativeMarks: Number.isFinite(mcq.negativeMarks) ? mcq.negativeMarks : prev.negativeMarks,
+            explanation: mcq.explanation || prev.explanation,
+            tags: Array.isArray(mcq.tags) ? mcq.tags.join(', ') : prev.tags
+        }));
+    };
+
+    const generateWithAI = async () => {
+        try {
+            setAiLoading(true);
+            const response = await api.post('/ai/mcq/generate', {
+                prompt: aiPrompt,
+                category: formData.category,
+                difficulty: formData.difficulty,
+                marks: formData.marks,
+                negativeMarks: formData.negativeMarks,
+                count: 1
+            });
+
+            const draft = response.data?.mcqs?.[0];
+            if (!draft) {
+                toast.error('AI did not return a usable MCQ');
+                return;
+            }
+            applyMCQDraft(draft);
+            toast.success('AI draft generated');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to generate AI draft');
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const improveWithAI = async () => {
+        if (!formData.question.trim()) {
+            toast.error('Write a draft question first, then enhance');
+            return;
+        }
+
+        try {
+            setAiLoading(true);
+            const response = await api.post('/ai/mcq/improve', {
+                prompt: aiPrompt,
+                draft: {
+                    question: formData.question,
+                    options: formData.options,
+                    category: formData.category,
+                    difficulty: formData.difficulty,
+                    marks: formData.marks,
+                    negativeMarks: formData.negativeMarks,
+                    explanation: formData.explanation,
+                    tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean)
+                }
+            });
+
+            const draft = response.data?.mcq;
+            if (!draft) {
+                toast.error('AI did not return an improved MCQ');
+                return;
+            }
+            applyMCQDraft(draft);
+            toast.success('Draft improved with AI');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to improve draft');
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
     const getCategoryColor = (cat) => {
         const colors = {
             GENERAL: 'bg-gray-500',
@@ -183,7 +272,7 @@ const MCQLibrary = () => {
     }
 
     return (
-        <div className="min-h-screen bg-dark-900 py-8">
+        <div className="page-shell min-h-screen py-8">
             <div className="max-w-7xl mx-auto px-4">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8">
@@ -206,7 +295,7 @@ const MCQLibrary = () => {
                         onClick={() => setPoolFilter('all')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'all'
                             ? 'bg-primary-500 text-white'
-                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            : 'surface-panel-muted text-muted-ui hover:text-strong'
                             }`}
                     >
                         All Questions
@@ -218,10 +307,10 @@ const MCQLibrary = () => {
                         onClick={() => setPoolFilter('public')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'public'
                             ? 'bg-green-500/20 text-green-400 border border-green-500/40'
-                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            : 'surface-panel-muted text-muted-ui hover:text-strong'
                             }`}
                     >
-                        🌐 Public Pool
+                        Public Pool
                         <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
                             {mcqs.filter(m => m.isPublic).length}
                         </span>
@@ -230,10 +319,10 @@ const MCQLibrary = () => {
                         onClick={() => setPoolFilter('private')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${poolFilter === 'private'
                             ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
-                            : 'bg-dark-700 text-gray-400 hover:text-white hover:bg-dark-600'
+                            : 'surface-panel-muted text-muted-ui hover:text-strong'
                             }`}
                     >
-                        🔒 {isAdmin ? 'Private Pool' : 'My Questions'}
+                        {isAdmin ? 'Private Pool' : 'My Questions'}
                         <span className="ml-2 px-1.5 py-0.5 rounded-full text-xs bg-dark-900/50">
                             {mcqs.filter(m => !m.isPublic).length}
                         </span>
@@ -251,14 +340,14 @@ const MCQLibrary = () => {
                                     placeholder="Search questions..."
                                     value={filters.search}
                                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                                    className="input pl-10 w-full"
+                                    className="input-field pl-10 w-full"
                                 />
                             </div>
                         </div>
                         <select
                             value={filters.category}
                             onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                            className="input min-w-[150px]"
+                            className="input-field min-w-[150px]"
                         >
                             <option value="">All Categories</option>
                             {MCQ_CATEGORIES.map(cat => (
@@ -268,7 +357,7 @@ const MCQLibrary = () => {
                         <select
                             value={filters.difficulty}
                             onChange={(e) => setFilters({ ...filters, difficulty: e.target.value })}
-                            className="input min-w-[150px]"
+                            className="input-field min-w-[150px]"
                         >
                             <option value="">All Difficulties</option>
                             {DIFFICULTIES.map(diff => (
@@ -394,31 +483,52 @@ const MCQLibrary = () => {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-dark-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-dark-700">
-                            <h2 className="text-xl font-bold">
+                    <div className="surface-panel border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b">
+                            <h2 className="text-xl font-bold text-strong">
                                 {editingMCQ ? 'Edit MCQ' : 'Add New MCQ'}
                             </h2>
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <div className="surface-panel-muted rounded-xl border p-4">
+                                <div className="mb-2 flex items-center gap-2">
+                                    <AiBeautifyIcon className="h-4 w-4 text-primary-500" />
+                                    <p className="text-sm font-semibold text-strong">AI Assistant</p>
+                                </div>
+                                <textarea
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    className="input-field h-20 w-full"
+                                    placeholder="Example: Create a technical medium-level MCQ on JavaScript closures with tricky distractors"
+                                />
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    <button type="button" className="btn-secondary" onClick={generateWithAI} disabled={aiLoading}>
+                                        {aiLoading ? 'Generating...' : 'Generate with AI'}
+                                    </button>
+                                    <button type="button" className="btn-outline" onClick={improveWithAI} disabled={aiLoading}>
+                                        {aiLoading ? 'Improving...' : 'Enhance current draft'}
+                                    </button>
+                                </div>
+                            </div>
+
                             <div>
-                                <label className="block text-sm font-medium mb-2">Question *</label>
+                                <label className="label">Question *</label>
                                 <textarea
                                     value={formData.question}
                                     onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                                    className="input w-full h-24"
+                                    className="input-field w-full h-24"
                                     required
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Category *</label>
+                                    <label className="label">Category *</label>
                                     <select
                                         value={formData.category}
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        className="input w-full"
+                                        className="input-field w-full"
                                     >
                                         {MCQ_CATEGORIES.map(cat => (
                                             <option key={cat} value={cat}>{cat}</option>
@@ -426,11 +536,11 @@ const MCQLibrary = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Difficulty *</label>
+                                    <label className="label">Difficulty *</label>
                                     <select
                                         value={formData.difficulty}
                                         onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                                        className="input w-full"
+                                        className="input-field w-full"
                                     >
                                         {DIFFICULTIES.map(diff => (
                                             <option key={diff} value={diff}>{diff}</option>
@@ -440,7 +550,7 @@ const MCQLibrary = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-2">Options * (check correct answers)</label>
+                                <label className="label">Options * (check correct answers)</label>
                                 <div className="space-y-2">
                                     {formData.options.map((opt, idx) => (
                                         <div key={idx} className="flex items-center gap-2">
@@ -455,7 +565,7 @@ const MCQLibrary = () => {
                                                 value={opt.text}
                                                 onChange={(e) => updateOption(idx, 'text', e.target.value)}
                                                 placeholder={`Option ${idx + 1}`}
-                                                className="input flex-1"
+                                                className="input-field flex-1"
                                                 required
                                             />
                                         </div>
@@ -465,22 +575,22 @@ const MCQLibrary = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Marks</label>
+                                    <label className="label">Marks</label>
                                     <input
                                         type="number"
                                         value={formData.marks}
                                         onChange={(e) => setFormData({ ...formData, marks: parseInt(e.target.value) })}
-                                        className="input w-full"
+                                        className="input-field w-full"
                                         min="1"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">Negative Marks</label>
+                                    <label className="label">Negative Marks</label>
                                     <input
                                         type="number"
                                         value={formData.negativeMarks}
                                         onChange={(e) => setFormData({ ...formData, negativeMarks: parseFloat(e.target.value) })}
-                                        className="input w-full"
+                                        className="input-field w-full"
                                         min="0"
                                         step="0.25"
                                     />
@@ -488,22 +598,22 @@ const MCQLibrary = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-2">Explanation</label>
+                                <label className="label">Explanation</label>
                                 <textarea
                                     value={formData.explanation}
                                     onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
-                                    className="input w-full h-20"
+                                    className="input-field w-full h-20"
                                     placeholder="Explain the correct answer..."
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+                                <label className="label">Tags (comma-separated)</label>
                                 <input
                                     type="text"
                                     value={formData.tags}
                                     onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                                    className="input w-full"
+                                    className="input-field w-full"
                                     placeholder="arrays, loops, basics"
                                 />
                             </div>

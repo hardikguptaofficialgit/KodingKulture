@@ -17,6 +17,7 @@ import uploadRoutes from './routes/upload.routes.js';
 import formRoutes from './routes/form.routes.js';
 import formSubmissionRoutes from './routes/formSubmission.routes.js';
 import roomRoutes from './routes/room.routes.js';
+import aiRoutes from './routes/ai.routes.js';
 
 // Import middleware
 import { errorHandler } from './middlewares/error.middleware.js';
@@ -109,6 +110,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/form-submissions', formSubmissionRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/ai', aiRoutes);
 
 // ===========================================
 // UTILITY ROUTES

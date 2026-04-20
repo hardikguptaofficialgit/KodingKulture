@@ -94,7 +94,11 @@ const UserDashboard = () => {
               <div>
                 <h1 className="text-2xl font-bold text-dark-50">{user?.name}</h1>
                 <p className="text-sm text-dark-300">{user?.email}</p>
-                {user?.college && <p className="mt-1 text-sm text-dark-400">{user.college}</p>}
+                {user?.college && (
+                  <p className="mt-1 text-sm text-dark-400">
+                    {user.college}
+                  </p>
+                )}
               </div>
             </div>
 

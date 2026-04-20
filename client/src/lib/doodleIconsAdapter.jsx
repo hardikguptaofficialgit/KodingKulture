@@ -158,8 +158,16 @@ const triangleAlertIcon = stroke(
     <path d="M12 17h.01" />
   </>
 );
+const aiBeautifyIcon = stroke(
+  <>
+    <path d="m12 3 1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3Z" />
+    <path d="m19 14 1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1 1-2.3Z" />
+    <path d="m5 14 .8 1.8 1.8.8-1.8.8L5 19.2l-.8-1.8-1.8-.8 1.8-.8L5 14Z" />
+  </>
+);
 
 export const AlertTriangle = triangleAlertIcon;
+export const AiBeautifyIcon = aiBeautifyIcon;
 export const AlignLeft = doodle(DoodleInterfaces.LeftAlign);
 export const ArrowLeft = doodle(DoodleArrow.ArrowLeft);
 export const ArrowRight = doodle(DoodleArrow.ArrowRight);

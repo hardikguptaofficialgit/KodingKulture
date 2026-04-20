@@ -400,7 +400,7 @@ const FieldEditor = ({
                 />
                 <button
                     onClick={() => onRemove(field.fieldId)}
-                    className="p-2 text-red-400 hover:bg-red-400/10 rounded"
+                    className="shape-morph-button shape-morph-button-danger p-2 text-red-400"
                 >
                     <Trash2 className="w-4 h-4" />
                 </button>
@@ -474,7 +474,7 @@ const FieldEditor = ({
                             />
                             <button
                                 onClick={() => onRemoveOption(field.fieldId, i)}
-                                className="text-red-400 hover:text-red-300"
+                                className="shape-morph-button shape-morph-button-danger p-2 text-red-400 hover:text-red-300"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>

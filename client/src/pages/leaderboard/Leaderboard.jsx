@@ -5,7 +5,7 @@ import leaderboardService from '../../services/leaderboardService';
 import api from '../../services/authService';
 import Loader from '../../components/common/Loader';
 import {
-  Trophy, Medal, TrendingUp, ChevronDown, ChevronUp,
+  Trophy, TrendingUp, ChevronDown, ChevronUp,
   ArrowLeft, FileText, Code, Timer, Clock, Shield, Users, ClipboardList, Download,
   CheckCircle, XCircle, Eye
 } from 'lucide-react';
@@ -100,7 +100,7 @@ const Leaderboard = () => {
             boxShadow: 'inset 0 0 24px rgb(249 179 43 / 0.08), 0 0 28px rgb(249 179 43 / 0.08)',
           }}
         >
-          <Trophy className="h-6 w-6 text-yellow-400" />
+          <span className="text-2xl" role="img" aria-label="1st Place Trophy">🏆</span>
         </div>
       );
     }
@@ -115,7 +115,7 @@ const Leaderboard = () => {
             boxShadow: 'inset 0 0 24px rgb(148 163 184 / 0.08), 0 0 24px rgb(148 163 184 / 0.06)',
           }}
         >
-          <Medal className="h-6 w-6 text-slate-300" />
+          <span className="text-2xl drop-shadow-md" role="img" aria-label="2nd Place Medal">🥈</span>
         </div>
       );
     }
@@ -130,7 +130,7 @@ const Leaderboard = () => {
             boxShadow: 'inset 0 0 24px rgb(249 115 22 / 0.08), 0 0 24px rgb(249 115 22 / 0.07)',
           }}
         >
-          <Medal className="h-6 w-6 text-orange-400" />
+          <span className="text-2xl drop-shadow-md" role="img" aria-label="3rd Place Medal">🥉</span>
         </div>
       );
     }
@@ -269,7 +269,7 @@ const Leaderboard = () => {
 
         {/* Admin Hint */}
         {isAdminOrOrganiser && (
-          <div className="mb-4 p-3   border border-primary-500/30 rounded-lg text-sm text-primary-400">
+          <div className="mb-4 p-3 border border-primary-500/30 rounded-lg text-sm text-primary-400">
             <TrendingUp className="w-4 h-4 inline mr-2" />
             Click on any participant row to view detailed time breakdown per question and section
           </div>
@@ -655,9 +655,9 @@ const Leaderboard = () => {
 
         {/* Legend */}
         <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-400">
-          <span className="flex items-center gap-1"><Trophy className="w-4 h-4 text-yellow-500" /> 1st place</span>
-          <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-gray-400" /> 2nd place</span>
-          <span className="flex items-center gap-1"><Medal className="w-4 h-4 text-orange-500" /> 3rd place</span>
+          <span className="flex items-center gap-1"><span role="img" aria-label="1st">🏆</span> 1st place</span>
+          <span className="flex items-center gap-1"><span role="img" aria-label="2nd">🥈</span> 2nd place</span>
+          <span className="flex items-center gap-1"><span role="img" aria-label="3rd">🥉</span> 3rd place</span>
         </div>
       </div>
     </div >

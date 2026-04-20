@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
@@ -15,6 +15,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const googleButtonRef = useRef(null);
 
   const { login, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -50,16 +51,22 @@ const Login = () => {
     }
 
     const initGoogle = () => {
-      if (window.google?.accounts?.id) {
+      if (window.google?.accounts?.id && googleButtonRef.current) {
+        googleButtonRef.current.innerHTML = '';
         window.google.accounts.id.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleGoogleCallback,
         });
-        
-        // We render it very wide so it fully covers our custom button underneath
+
         window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-button'),
-          { theme: 'filled_black', size: 'large', width: '400', text: 'signin_with' }
+          googleButtonRef.current,
+          {
+            theme: 'outline',
+            size: 'large',
+            width: Math.max(320, Math.floor(googleButtonRef.current.offsetWidth || 320)),
+            text: 'continue_with',
+            shape: 'pill',
+          }
         );
       }
     };
@@ -118,7 +125,7 @@ const Login = () => {
               
               {/* Custom Google Sign In Block */}
               <div
-                className="relative flex w-full items-center justify-between overflow-hidden rounded-2xl p-4 text-left transition-colors"
+                className="relative flex min-h-[76px] w-full items-center justify-between overflow-hidden rounded-2xl p-4 text-left transition-colors"
                 style={{ backgroundColor: 'rgb(var(--color-panel-muted) / 0.72)' }}
               >
                 <div className="flex items-center gap-3">
@@ -139,8 +146,10 @@ const Login = () => {
 
                 {/* The invisible real Google button overlay */}
                 {GOOGLE_CLIENT_ID ? (
-                  <div className={`absolute inset-0 z-10 flex items-center justify-center opacity-0 ${googleLoading ? 'pointer-events-none' : ''}`}>
-                    <div id="google-signin-button" className="h-full w-full scale-[1.5]"></div>
+                  <div
+                    className={`absolute inset-0 z-10 overflow-hidden rounded-2xl ${googleLoading ? 'pointer-events-none' : 'cursor-pointer opacity-[0.01]'}`}
+                  >
+                    <div ref={googleButtonRef} className="h-full w-full"></div>
                   </div>
                 ) : (
                   <div className="absolute inset-0 z-20 flex items-center justify-center text-xs text-red-500" style={{ backgroundColor: 'rgb(var(--color-panel) / 0.92)' }}>

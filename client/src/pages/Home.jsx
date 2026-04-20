@@ -106,26 +106,19 @@ const Home = () => {
             <img
               src="/assets/herobg.png"
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.3] sm:opacity-[0.38]"
+              className="home-hero-image absolute inset-0 h-full w-full object-cover object-center opacity-[0.3] sm:opacity-[0.38]"
             />
             <div
-              className="absolute inset-0"
-              style={{
-                background: `
-                  linear-gradient(180deg, rgb(var(--color-page) / 0.42), rgb(var(--color-page) / 0.14) 24%, rgb(var(--color-page) / 0.54) 100%),
-                  radial-gradient(circle at top left, rgba(202,78,39,0.22), transparent 30%),
-                  linear-gradient(135deg, rgb(var(--color-panel) / 0.54) 0%, rgb(var(--color-panel-muted) / 0.28) 48%, rgb(var(--color-page) / 0.52) 100%)
-                `,
-              }}
+              className="home-hero-overlay absolute inset-0"
             />
           </div>
 
           <section className="relative z-10 mx-auto max-w-4xl space-y-8 text-center">
             <div className="space-y-5">
-              <h1 className="font-display text-strong mx-auto max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+              <h1 className="home-hero-title font-display text-strong mx-auto max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
                 Turn coding contests into a sharper, cleaner, more competitive experience.
               </h1>
-              <p className="text-muted-ui mx-auto max-w-2xl text-lg leading-relaxed sm:text-xl">
+              <p className="home-hero-subtitle text-muted-ui mx-auto max-w-2xl text-lg leading-relaxed sm:text-xl">
                 Run weekly challenges, timed hiring rounds, and structured assessments.
               </p>
             </div>
@@ -151,8 +144,8 @@ const Home = () => {
             <div className="flex flex-wrap justify-center gap-6 pt-6 sm:gap-10">
               {metrics.map((metric) => (
                 <div key={metric.label} className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-strong sm:text-4xl">{metric.value}</span>
-                  <span className="text-muted-ui text-xs uppercase tracking-[0.15em]">{metric.label}</span>
+                  <span className="home-hero-metric-value text-3xl font-bold text-strong sm:text-4xl">{metric.value}</span>
+                  <span className="home-hero-metric-label text-muted-ui text-xs uppercase tracking-[0.15em]">{metric.label}</span>
                 </div>
               ))}
             </div>
@@ -171,11 +164,7 @@ const Home = () => {
 
           {/* Top Level Node */}
           <div
-            className="z-10 rounded-2xl px-8 py-4 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)] backdrop-blur-md"
-            style={{
-              border: '1px solid rgb(var(--color-border) / 0.55)',
-              backgroundColor: 'rgb(var(--color-panel) / 0.45)',
-            }}
+            className="home-glass-panel z-10 rounded-2xl px-8 py-4 text-center shadow-[0_10px_30px_rgba(0,0,0,0.03)] backdrop-blur-md"
           >
             <h3 className="font-display text-strong text-xl font-semibold tracking-wide">Platform Ecosystem</h3>
           </div>
@@ -235,18 +224,10 @@ const Home = () => {
             {platformColumns.map(({ title, description, stat }) => (
               <div
                 key={title}
-                className="relative flex flex-col items-center overflow-hidden rounded-[1.5rem] p-6 text-center shadow-sm backdrop-blur-sm"
-                style={{
-                  border: '1px solid rgb(var(--color-border) / 0.55)',
-                  backgroundColor: 'rgb(var(--color-panel-muted) / 0.45)',
-                }}
+                className="home-flow-node relative flex flex-col items-center overflow-hidden rounded-[1.5rem] p-6 text-center shadow-sm backdrop-blur-sm"
               >
                 <span
-                  className="mb-4 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-ui"
-                  style={{
-                    border: '1px solid rgb(var(--color-border) / 0.55)',
-                    backgroundColor: 'rgb(var(--color-panel-muted) / 0.72)',
-                  }}
+                  className="home-stat-pill mb-4 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-ui"
                 >
                   {stat}
                 </span>
@@ -263,25 +244,19 @@ const Home = () => {
             <img
               src="/assets/herobg.png"
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
+              className="home-secondary-image absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
             />
             <div
-              className="absolute inset-0"
-              style={{
-                background: `
-                  linear-gradient(180deg, rgb(var(--color-page) / 0.68), rgb(var(--color-page) / 0.42) 42%, rgb(var(--color-page) / 0.74) 100%),
-                  linear-gradient(135deg, rgb(var(--color-panel) / 0.38) 0%, rgb(var(--color-panel-muted) / 0.18) 48%, rgb(var(--color-page) / 0.38) 100%)
-                `,
-              }}
+              className="home-secondary-overlay absolute inset-0"
             />
           </div>
 
           {/* Centered Features Heading */}
           <div className="relative z-10 mb-12 text-center">
-            <h2 className="font-display text-strong text-3xl font-semibold sm:text-4xl">
+            <h2 className="home-secondary-title font-display text-strong text-3xl font-semibold sm:text-4xl">
               Powerful features for every stage
             </h2>
-            <p className="text-muted-ui mx-auto mt-4 max-w-2xl text-base sm:text-lg">
+            <p className="home-secondary-subtitle text-muted-ui mx-auto mt-4 max-w-2xl text-base sm:text-lg">
               Everything you need to host, manage, and evaluate competitive coding and objective rounds with ease.
             </p>
           </div>
@@ -291,11 +266,7 @@ const Home = () => {
             {features.map(({ icon: Icon, title, description }) => (
               <article
                 key={title}
-                className="group relative overflow-hidden rounded-[1.5rem] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.04)] backdrop-blur transition-colors duration-300 hover:bg-opacity-100 sm:p-8"
-                style={{
-                  border: '1px solid rgb(var(--color-border) / 0.55)',
-                  backgroundColor: 'rgb(var(--color-panel-muted) / 0.82)',
-                }}
+                className="home-feature-card group relative overflow-hidden rounded-[1.5rem] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.04)] backdrop-blur transition-colors duration-300 hover:bg-opacity-100 sm:p-8"
               >
                 <div
                   className="absolute inset-0 opacity-80"
@@ -346,20 +317,17 @@ const Home = () => {
             src="/assets/herobg.png"
             alt=""
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
+            className="home-cta-image pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-[0.08] sm:opacity-[0.12]"
           />
           <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: 'linear-gradient(90deg, rgb(var(--color-page) / 0.5) 0%, rgb(var(--color-page) / 0.32) 48%, rgb(var(--color-page) / 0.16) 100%)',
-            }}
+            className="home-cta-overlay pointer-events-none absolute inset-0"
           />
           <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center gap-8">
             <div>
-              <h2 className="font-display text-strong text-3xl font-semibold sm:text-4xl">
+              <h2 className="home-cta-title font-display text-strong text-3xl font-semibold sm:text-4xl">
                 {isAuthenticated ? 'Ready for your next challenge?' : 'Everything is set up for your first contest.'}
               </h2>
-              <p className="text-muted-ui mx-auto mt-4 text-lg leading-relaxed">
+              <p className="home-cta-subtitle text-muted-ui mx-auto mt-4 text-lg leading-relaxed">
                 Join thousands of developers assessing their abilities, learning new concepts, and proving their algorithmic prowess in highly competitive weekly rounds.
               </p>
             </div>

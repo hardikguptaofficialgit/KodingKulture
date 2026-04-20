@@ -611,7 +611,7 @@ const CreateContest = () => {
                     <button
                       type="button"
                       onClick={() => removeArrayItem('rules', index)}
-                      className="p-2 hover:bg-dark-600 rounded-lg transition-colors text-red-400"
+                      className="shape-morph-button shape-morph-button-danger p-2 transition-colors text-red-400"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -647,7 +647,7 @@ const CreateContest = () => {
                     <button
                       type="button"
                       onClick={() => removeArrayItem('prizes', index)}
-                      className="p-2 hover:bg-dark-600 rounded-lg transition-colors text-red-400"
+                      className="shape-morph-button shape-morph-button-danger p-2 transition-colors text-red-400"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

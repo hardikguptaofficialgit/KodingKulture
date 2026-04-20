@@ -91,7 +91,7 @@ const ImageUpload = ({ imageUrl, onImageChange, onImageRemove }) => {
                     <button
                         type="button"
                         onClick={handleRemove}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors"
+                        className="shape-morph-button shape-morph-button-danger absolute top-2 right-2 p-1.5 bg-red-500 text-white transition-colors"
                         title="Remove image"
                     >
                         <X className="w-4 h-4" />

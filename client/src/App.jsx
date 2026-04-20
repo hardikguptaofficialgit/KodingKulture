@@ -44,10 +44,16 @@ import JoinRoom from './pages/rooms/JoinRoom';
 import AcceptInvite from './pages/rooms/AcceptInvite';
 import Loader from './components/common/Loader';
 import ProctorGuard from './components/contest/ProctorGuard';
+import OnboardingModal from './components/common/OnboardingModal';
+
+const isOnboardingComplete = (user) => {
+  const safe = (value) => (typeof value === 'string' ? value.trim() : '');
+  return Boolean(safe(user?.name) && safe(user?.college) && safe(user?.phone));
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) {
     return <Loader fullScreen />;
@@ -57,12 +63,19 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  const needsOnboarding = !isOnboardingComplete(user);
+
+  return (
+    <>
+      {children}
+      <OnboardingModal isOpen={needsOnboarding} />
+    </>
+  );
 };
 
 // Admin Route Component
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, user } = useAuth();
 
   if (loading) {
     return <Loader fullScreen />;
@@ -76,12 +89,19 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  const needsOnboarding = !isOnboardingComplete(user);
+
+  return (
+    <>
+      {children}
+      <OnboardingModal isOpen={needsOnboarding} />
+    </>
+  );
 };
 
 // Admin or Organiser Route Component
 const AdminOrOrganiserRoute = ({ children }) => {
-  const { isAuthenticated, isAdminOrOrganiser, loading } = useAuth();
+  const { isAuthenticated, isAdminOrOrganiser, loading, user } = useAuth();
 
   if (loading) {
     return <Loader fullScreen />;
@@ -95,7 +115,14 @@ const AdminOrOrganiserRoute = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  const needsOnboarding = !isOnboardingComplete(user);
+
+  return (
+    <>
+      {children}
+      <OnboardingModal isOpen={needsOnboarding} />
+    </>
+  );
 };
 
 // Scroll to Top Component
@@ -114,7 +141,7 @@ const Layout = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 overflow-x-clip">{children}</main>
       <Footer />
     </div>
   );
@@ -209,7 +236,6 @@ const ProctoredContest = ({ children, sectionType = 'mcq' }) => {
     </ContestTimerProvider>
   );
 };
-
 
 function App() {
   useEffect(() => {

@@ -54,7 +54,8 @@ export const register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        college: user.college
+        college: user.college,
+        phone: user.phone
       }
     });
   } catch (error) {
@@ -112,6 +113,7 @@ export const login = async (req, res) => {
         email: user.email,
         role: user.role,
         college: user.college,
+        phone: user.phone,
         avatar: user.avatar
       }
     });
@@ -201,8 +203,8 @@ export const updateProfile = async (req, res) => {
 
     if (user) {
       user.name = name || user.name;
-      user.college = college || user.college;
-      user.phone = phone || user.phone;
+      user.college = typeof college === 'string' ? college : user.college;
+      user.phone = typeof phone === 'string' ? phone : user.phone;
 
       const updatedUser = await user.save();
 
@@ -268,7 +270,9 @@ export const sendSignupOTP = async (req, res) => {
       purpose: 'SIGNUP',
       pendingUserData: {
         name,
-        password: hashedPassword
+        password: hashedPassword,
+        college,
+        phone
       },
       expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
     });
@@ -325,6 +329,8 @@ export const verifySignupOTP = async (req, res) => {
       name: otpRecord.pendingUserData.name,
       email,
       password: otpRecord.pendingUserData.password,
+      college: otpRecord.pendingUserData.college,
+      phone: otpRecord.pendingUserData.phone,
       isVerified: true
     });
 
@@ -343,7 +349,9 @@ export const verifySignupOTP = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        college: user.college,
+        phone: user.phone
       }
     });
   } catch (error) {
@@ -583,7 +591,9 @@ export const googleAuth = async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        college: user.college,
+        phone: user.phone
       }
     });
   } catch (error) {

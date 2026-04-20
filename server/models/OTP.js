@@ -23,7 +23,9 @@ const otpSchema = new mongoose.Schema({
     // Store pending user data for signup
     pendingUserData: {
         name: String,
-        password: String
+        password: String,
+        college: String,
+        phone: String
     },
     expiresAt: {
         type: Date,
